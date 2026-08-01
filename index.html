@@ -613,6 +613,31 @@
     </div>
   </details>
 
+  <details id="lifewrap" hidden>
+    <summary>All my driving</summary>
+    <div class="panel">
+      <div class="statbox" style="margin-bottom:10px;background:var(--ink);">
+        <div class="num" id="l-true" style="color:#fff;">—</div>
+        <div class="lbl" id="l-truelbl" style="color:#A8B0B8;">Real per hour</div>
+      </div>
+      <div class="statgrid">
+        <div class="statbox"><div class="num" id="l-net">$0.00</div><div class="lbl">Kept, all time</div></div>
+        <div class="statbox"><div class="num" id="l-hourly">—</div><div class="lbl">Per hour on trips</div></div>
+        <div class="statbox"><div class="num" id="l-taken">0</div><div class="lbl">Trips taken</div></div>
+        <div class="statbox"><div class="num" id="l-passed">0</div><div class="lbl">Offers passed</div></div>
+        <div class="statbox"><div class="num" id="l-rate">—</div><div class="lbl">You take this many</div></div>
+        <div class="statbox"><div class="num" id="l-miles">0</div><div class="lbl">Miles driven</div></div>
+      </div>
+      <div class="statbox" style="margin-top:10px;">
+        <div class="num" id="l-ded">$0.00</div>
+        <div class="lbl">Mileage write-off earned</div>
+      </div>
+      <p class="dedhint" id="l-since"></p>
+      <p class="dedhint">These keep counting no matter how many times you start a fresh day. Only the buttons below reset them.</p>
+      <button class="clear" onclick="resetLife()">Erase all my totals</button>
+    </div>
+  </details>
+
   <div class="chart" id="chart">
     <h2>Decline chart — no phone needed</h2>
     <p class="sublead">Miles the app shows you (one way) and the least they should be paying. Under that number, decline on sight.</p>
@@ -1068,6 +1093,106 @@ function saveChart(){
   showChartFallback(url);
 }
 
+/* ---------- lifetime totals ----------
+   Separate storage on purpose. The day log gets wiped by "Start a fresh day"
+   and the shift clock is optional, so neither can be trusted to hold a
+   running total. This only ever adds. */
+// tripNet and minutes only ever move together, from trips where both are
+// known. Archived shift summaries carry money but no minutes, so folding them
+// into net alone would inflate the per-hour figure.
+function blankLife(){
+  return {offers:0, taken:0, passed:0, net:0, tripNet:0, miles:0, minutes:0,
+          shiftMs:0, shifts:0, since:null};
+}
+
+function loadLife(){
+  var raw = fetchv('dm-life');
+  if(!raw) return blankLife();
+  try{
+    var l = JSON.parse(raw), b = blankLife();
+    for(var k in b){ if(typeof l[k] === typeof b[k] || l[k] !== undefined) b[k] = l[k]; }
+    return b;
+  }catch(e){ return blankLife(); }
+}
+
+function saveLife(l){ store('dm-life', JSON.stringify(l)); }
+
+function addLife(patch){
+  var l = loadLife();
+  for(var k in patch){ l[k] = (l[k] || 0) + patch[k]; }
+  if(!l.since) l.since = Date.now();
+  saveLife(l);
+  renderLife();
+}
+
+// one-time backfill so anyone already using the app doesn't start from zero.
+// Archived shifts are the definitive record; only day-log entries newer than
+// the last archived shift are added on top, so nothing is counted twice.
+function migrateLife(){
+  if(fetchv('dm-life')) return;
+  var shifts = loadShifts(), log = loadLog();
+  var l = blankLife();
+  var newest = 0;
+  for(var i = 0; i < shifts.length; i++){
+    var s = shifts[i];
+    l.offers += s.offers; l.taken += s.taken;
+    l.passed += Math.max(0, s.offers - s.taken);
+    l.net += s.net; l.miles += s.miles;
+    l.shiftMs += (s.end - s.start); l.shifts += 1;
+    if(s.end > newest) newest = s.end;
+    if(!l.since || s.start < l.since) l.since = s.start;
+  }
+  for(var j = 0; j < log.length; j++){
+    var e = log[j];
+    if(e.ts <= newest) continue;
+    l.offers += 1;
+    if(e.decision === 'take'){
+      l.taken += 1; l.net += e.net; l.tripNet += e.net;
+      l.miles += e.miles; l.minutes += e.minutes;
+    } else { l.passed += 1; }
+    if(!l.since || e.ts < l.since) l.since = e.ts;
+  }
+  if(l.offers || l.shifts) saveLife(l);
+}
+
+function resetLife(){
+  saveLife(blankLife());
+  renderLife();
+}
+
+function renderLife(){
+  var l = loadLife();
+  $('lifewrap').hidden = (l.offers === 0 && l.shifts === 0);
+  if(l.offers === 0 && l.shifts === 0) return;
+
+  $('l-taken').textContent = l.taken;
+  $('l-passed').textContent = l.passed;
+  $('l-net').textContent = '$' + l.net.toFixed(2);
+  $('l-miles').textContent = Math.round(l.miles).toLocaleString();
+  $('l-ded').textContent = '$' + (l.miles * mileRate(l.since || Date.now())).toFixed(2);
+  $('l-rate').textContent = l.offers ? Math.round(l.taken / l.offers * 100) + '%' : '—';
+
+  var workHrs = l.minutes / 60;
+  $('l-hourly').textContent = workHrs > 0.05 ? '$' + (l.tripNet / workHrs).toFixed(2) : '—';
+
+  var shiftHrs = l.shiftMs / 3600000;
+  if(shiftHrs > 0.05){
+    var real = l.net / shiftHrs;
+    $('l-true').textContent = '$' + real.toFixed(2);
+    $('l-true').style.color = real >= readSettings().target ? '#5FD39B' : '#FF8A80';
+    $('l-truelbl').textContent = 'Real per hour — across ' + shiftHrs.toFixed(1) +
+      ' hrs on the clock';
+  } else {
+    $('l-true').textContent = '—';
+    $('l-true').style.color = '#fff';
+    $('l-truelbl').textContent = 'Real per hour — use the shift clock to fill this in';
+  }
+
+  $('l-since').textContent = l.since
+    ? 'Since ' + new Date(l.since).toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'})
+    : '';
+}
+
 function loadLog(){
   var raw = fetchv('dm-log');
   if(!raw) return [];
@@ -1152,6 +1277,9 @@ function toggleShift(){
       var all = loadShifts();
       all.unshift(summarise(loadLog(), start, end));
       store('dm-shifts', JSON.stringify(all.slice(0, 30)));
+      // only the clock time is added here -- the offers themselves were
+      // already counted as they were logged
+      addLife({shiftMs:end - start, shifts:1});
     }
     store('dm-shift', '');
   } else {
@@ -1218,6 +1346,7 @@ function deliverOne(){
     log.push({pay:r.pay, miles:r.miles, minutes:Math.round(mins), net:net,
               hourly:hourly, decision:'take', actual:true, ts:Date.now()});
     store('dm-log', JSON.stringify(log));
+    addLife({offers:1, taken:1, net:net, tripNet:net, miles:r.miles, minutes:Math.round(mins)});
     renderLog();
     r.finished = true;
     r.actualHourly = hourly;
@@ -1276,6 +1405,11 @@ function logIt(decision){
   var log = loadLog();
   log.push({pay:d.pay, miles:d.miles, minutes:d.minutes, net:d.net, hourly:d.hourly, decision:decision, ts:Date.now()});
   store('dm-log', JSON.stringify(log));
+  if(decision === 'take'){
+    addLife({offers:1, taken:1, net:d.net, tripNet:d.net, miles:d.miles, minutes:d.minutes});
+  } else {
+    addLife({offers:1, passed:1});
+  }
   renderLog();
 }
 
@@ -1297,6 +1431,8 @@ var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
 setMilesMode(fetchv('dm-milemode') === 'round' ? 'round' : 'shown');
+migrateLife();
+renderLife();
 renderChart();
 renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
