@@ -241,12 +241,134 @@
   .foot{font-size:.82rem;color:var(--steel);line-height:1.6;margin-top:20px;}
   .foot strong{color:var(--ink);}
 
+  /* ---------- first-run setup ---------- */
+  [hidden]{display:none !important;}
+  .stepno{
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:.8rem;
+    text-transform:uppercase;letter-spacing:.1em;
+    color:var(--steel);margin:0 0 6px;
+  }
+  .q{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    text-transform:uppercase;letter-spacing:.03em;
+    font-size:1.5rem;line-height:1.15;margin:0;
+  }
+  .q:focus{outline:none;}
+  .qsub{margin:8px 0 18px;font-size:.95rem;color:var(--steel);line-height:1.5;}
+
+  .vbtn{
+    display:block;width:100%;text-align:left;
+    background:var(--card);border:2px solid var(--edge);border-radius:12px;
+    padding:15px 16px;min-height:74px;margin-bottom:12px;cursor:pointer;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:1.15rem;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--ink);
+  }
+  .vbtn:active{transform:translateY(1px);}
+  .vbtn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .vmpg{
+    display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:.82rem;
+    text-transform:none;letter-spacing:0;color:var(--steel);margin-top:3px;
+  }
+  .vbtn[aria-pressed="true"] .vmpg{color:#A8B0B8;}
+
+  .btn-primary{
+    display:block;width:100%;margin-top:18px;
+    background:var(--ink);color:#fff;border:2px solid var(--ink);border-radius:12px;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;
+    text-transform:uppercase;letter-spacing:.05em;
+    padding:16px 8px;min-height:60px;cursor:pointer;
+  }
+  .btn-primary:active{transform:translateY(1px);}
+  .exact{
+    display:block;width:100%;margin-top:2px;padding:14px;min-height:52px;
+    background:transparent;border:2px dashed var(--edge);border-radius:10px;
+    color:var(--steel);font-family:inherit;font-size:.92rem;cursor:pointer;
+  }
+
   *:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
   @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app" id="setup" hidden>
+
+  <div class="masthead">
+    <div class="badge">$</div>
+    <div>
+      <h1>Dash Math</h1>
+      <p>Let's set up your car — three quick questions</p>
+    </div>
+  </div>
+
+  <section class="step" id="step1">
+    <p class="stepno">Step 1 of 3</p>
+    <h2 class="q" id="q1" tabindex="-1">What do you drive?</h2>
+    <p class="qsub">Tap the one closest to your car. Don't worry about being exact.</p>
+
+    <button class="vbtn" id="v32" aria-pressed="false" onclick="pickVehicle(32)">
+      Small car<span class="vmpg">Civic, Corolla, Prius — about 32 miles per gallon</span></button>
+    <button class="vbtn" id="v26" aria-pressed="false" onclick="pickVehicle(26)">
+      Midsize car<span class="vmpg">Camry, Accord, Malibu — about 26 miles per gallon</span></button>
+    <button class="vbtn" id="v20" aria-pressed="false" onclick="pickVehicle(20)">
+      SUV or minivan<span class="vmpg">RAV4, Explorer, Odyssey — about 20 miles per gallon</span></button>
+    <button class="vbtn" id="v15" aria-pressed="false" onclick="pickVehicle(15)">
+      Truck or large SUV<span class="vmpg">F-150, Silverado, Tahoe — about 15 miles per gallon</span></button>
+
+    <button class="exact" id="exactBtn" onclick="showExact()">I know my exact miles per gallon</button>
+
+    <div id="exactWrap" hidden>
+      <div class="stepper" style="margin-top:16px;">
+        <label for="su-mpg">Miles per gallon</label>
+        <div class="ctrl">
+          <button onclick="subump('su-mpg',-1)" aria-label="Lower miles per gallon">−</button>
+          <input type="number" id="su-mpg" value="26" step="1" min="1" inputmode="decimal" aria-label="Miles per gallon">
+          <button onclick="subump('su-mpg',1)" aria-label="Raise miles per gallon">+</button>
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:0;" onclick="showStep(2)">Next</button>
+    </div>
+
+    <button class="clear" id="cancelBtn" onclick="closeSetup()" hidden>Cancel — keep what I had</button>
+  </section>
+
+  <section class="step" id="step2" hidden>
+    <p class="stepno">Step 2 of 3</p>
+    <h2 class="q" id="q2" tabindex="-1">What does gas cost near you?</h2>
+    <p class="qsub">Price per gallon at the station you usually stop at.</p>
+
+    <div class="stepper">
+      <label for="su-gas">Price per gallon</label>
+      <div class="ctrl">
+        <button onclick="subump('su-gas',-0.05)" aria-label="Lower gas price">−</button>
+        <input type="number" id="su-gas" value="4.50" step="0.05" min="0" inputmode="decimal" aria-label="Gas price per gallon">
+        <button onclick="subump('su-gas',0.05)" aria-label="Raise gas price">+</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="showStep(3)">Next</button>
+    <button class="clear" onclick="showStep(1)">Back</button>
+  </section>
+
+  <section class="step" id="step3" hidden>
+    <p class="stepno">Step 3 of 3</p>
+    <h2 class="q" id="q3" tabindex="-1">What's the least you'll work for?</h2>
+    <p class="qsub">Per hour, after gas and wear on your car. Most drivers set this between $20 and $25.</p>
+
+    <div class="stepper">
+      <label for="su-target">Dollars per hour</label>
+      <div class="ctrl">
+        <button onclick="subump('su-target',-1)" aria-label="Lower target per hour">−</button>
+        <input type="number" id="su-target" value="20" step="1" min="1" inputmode="decimal" aria-label="Target dollars per hour">
+        <button onclick="subump('su-target',1)" aria-label="Raise target per hour">+</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="finishSetup()">Start using Dash Math</button>
+    <button class="clear" onclick="showStep(2)">Back</button>
+  </section>
+</div>
+
+<div class="app" id="calc">
 
   <div class="masthead">
     <div class="badge">$</div>
@@ -334,11 +456,11 @@
     <div class="panel">
       <div class="setting">
         <label for="mpg">Miles per gallon</label>
-        <input type="number" id="mpg" value="14" step="1" min="1" inputmode="decimal">
+        <input type="number" id="mpg" value="26" step="1" min="1" inputmode="decimal">
       </div>
       <div class="setting">
         <label for="gasprice">Price per gallon</label>
-        <input type="number" id="gasprice" value="5.59" step="0.05" min="0" inputmode="decimal">
+        <input type="number" id="gasprice" value="4.50" step="0.05" min="0" inputmode="decimal">
       </div>
       <div class="setting">
         <label for="wear">Wear &amp; tear per mile
@@ -348,8 +470,9 @@
       <div class="setting">
         <label for="target">Target per hour
           <span class="note">Your "worth leaving the house" number</span></label>
-        <input type="number" id="target" value="22" step="1" min="1" inputmode="decimal">
+        <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
       </div>
+      <button class="clear" onclick="openSetup('again')">Change my car</button>
       <p style="font-size:.82rem;color:var(--steel);margin:14px 0 0;">Set these once. They're saved on this phone and stay put.</p>
     </div>
   </details>
@@ -438,7 +561,7 @@ function saveSettings(){
 
 function loadSettings(){
   var raw = fetchv('dm-settings');
-  if(!raw) return;
+  if(!raw) return false;
   try{
     var s = JSON.parse(raw);
     if(s.mpg) $('mpg').value = s.mpg;
@@ -446,15 +569,94 @@ function loadSettings(){
     if(s.wear !== undefined) $('wear').value = s.wear;
     if(s.target) $('target').value = s.target;
   }catch(e){}
+  return true;
+}
+
+function applyUrlParams(){
+  var hit = false;
   try{
     var q = new URLSearchParams(location.search);
     var map = {mpg:'mpg', gas:'gasprice', wear:'wear', target:'target'};
-    var hit = false;
     for(var k in map){
       if(q.has(k) && q.get(k) !== ''){ $(map[k]).value = q.get(k); hit = true; }
     }
     if(hit) saveSettings();
   }catch(e){}
+  return hit;
+}
+
+/* ---------- first-run setup ---------- */
+var PRESETS = [32,26,20,15];
+
+function openSetup(mode){
+  var s = readSettings();
+  $('su-gas').value = s.gas.toFixed(2);
+  $('su-target').value = s.target;
+  $('su-mpg').value = s.mpg;
+
+  var preset = false;
+  for(var i=0;i<PRESETS.length;i++){
+    var on = (mode === 'again' && PRESETS[i] === s.mpg);
+    $('v'+PRESETS[i]).setAttribute('aria-pressed', on);
+    if(on) preset = true;
+  }
+  // re-run with a custom MPG: open the exact stepper so they see their own number
+  $('exactWrap').hidden = !(mode === 'again' && !preset);
+  $('exactBtn').hidden = (mode === 'again' && !preset);
+  $('cancelBtn').hidden = (mode !== 'again');
+
+  $('calc').hidden = true;
+  $('setup').hidden = false;
+  showStep(1);
+}
+
+function closeSetup(){
+  $('setup').hidden = true;
+  $('calc').hidden = false;
+  window.scrollTo(0,0);
+}
+
+function showStep(n){
+  [1,2,3].forEach(function(i){ $('step'+i).hidden = (i !== n); });
+  window.scrollTo(0,0);
+  $('q'+n).focus();
+}
+
+function pickVehicle(mpg){
+  $('su-mpg').value = mpg;
+  for(var i=0;i<PRESETS.length;i++){
+    $('v'+PRESETS[i]).setAttribute('aria-pressed', PRESETS[i] === mpg);
+  }
+  showStep(2);
+}
+
+function showExact(){
+  $('exactWrap').hidden = false;
+  $('exactBtn').hidden = true;
+  $('su-mpg').focus();
+}
+
+function subump(id, by){
+  var el = $(id);
+  var v = (parseFloat(el.value) || 0) + by;
+  if(v < 0) v = 0;
+  v = Math.round(v * 100) / 100;
+  el.value = (id === 'su-gas') ? v.toFixed(2) : v;
+}
+
+function clamp(v, lo, hi, fallback){
+  if(!isFinite(v) || v <= 0) return fallback;
+  return Math.min(hi, Math.max(lo, v));
+}
+
+function finishSetup(){
+  $('mpg').value = clamp(parseFloat($('su-mpg').value), 1, 99, 26);
+  $('gasprice').value = clamp(parseFloat($('su-gas').value), 0.5, 15, 4.50);
+  $('target').value = clamp(parseFloat($('su-target').value), 1, 200, 20);
+  saveSettings();
+  closeSetup();
+  autoMinutes();
+  compute();
 }
 
 function compute(){
@@ -558,9 +760,11 @@ $('minutes').addEventListener('input', function(){ touchedMinutes = true; comput
   $(id).addEventListener('input', function(){ compute(); saveSettings(); });
 });
 
-loadSettings();
+var hadSettings = loadSettings();
+var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
+if(!hadSettings && !urlHit) openSetup('first');
 renderLog();
 setInterval(renderLog, 60000);
 </script>
