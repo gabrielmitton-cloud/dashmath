@@ -292,6 +292,13 @@
   #chartout img{width:100%;border-radius:12px;display:block;}
   .savehint{font-size:.85rem;color:var(--steel);margin:0 0 10px;text-align:center;}
 
+  /* ---------- pace ---------- */
+  .pacenote{
+    font-size:.8rem;color:var(--steel);line-height:1.45;
+    margin:-14px 0 20px;padding:0 2px;
+  }
+  .pacenote.on{color:var(--pick);font-weight:600;}
+
   /* ---------- shift history ---------- */
   .dedhint{font-size:.76rem;color:var(--steel);margin:10px 0 0;line-height:1.45;}
   .pasth{
@@ -505,6 +512,7 @@
     <label for="minutes">Minutes it'll take</label>
     <input type="number" id="minutes" value="27" step="5" min="1" inputmode="numeric" aria-label="Estimated minutes">
   </div>
+  <p class="pacenote" id="pacenote"></p>
 
   <div class="sign go" id="sign" role="status" aria-live="polite">
     <div class="sign-inner">
@@ -565,6 +573,7 @@
         <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
       </div>
       <button class="clear" onclick="openSetup('again')">Change my car</button>
+      <button class="clear" id="pacebtn" onclick="clearPace()">Forget my pace and start over</button>
       <p style="font-size:.82rem;color:var(--steel);margin:14px 0 0;">Set these once. They're saved on this phone and stay put.</p>
     </div>
   </details>
@@ -636,19 +645,76 @@ function setMode(m){
   store('dm-mode', m);
 }
 
+/* ---------- how long a trip really takes ----------
+   The textbook guess below (25 mph, 8 min in the store) is the weakest
+   number in the app -- every verdict divides by it. Rather than argue about
+   the constants, the app watches how long this driver's finished runs
+   actually take and corrects for it.
+
+   rawMinutes() must stay unadjusted. It is the fixed yardstick every finished
+   run is measured against; if the learned factor fed back into it, the ratio
+   would drift to 1.00 and the app would congratulate itself for being wrong. */
+function rawMinutes(miles, stops, items, m){
+  var drive = miles * 2.4;
+  if(m === 'ic') return drive + 12 + items * 0.9 + (stops - 1) * 6;
+  return drive + 8 + (stops - 1) * 7;
+}
+
+function loadPace(){
+  var raw = fetchv('dm-pace');
+  if(!raw) return [];
+  try{ var a = JSON.parse(raw); return a.length ? a : []; }catch(e){ return []; }
+}
+
+// median, not mean: one run where the driver forgot to tap "delivered" until
+// the next morning shouldn't move this at all
+function paceFactor(){
+  var p = loadPace();
+  if(p.length < 3) return 1;
+  var ratios = p.map(function(e){ return e.act / e.est; }).sort(function(a,b){ return a - b; });
+  var mid = Math.floor(ratios.length / 2);
+  var med = ratios.length % 2 ? ratios[mid] : (ratios[mid - 1] + ratios[mid]) / 2;
+  return Math.min(2.5, Math.max(0.6, med));
+}
+
 function autoMinutes(){
   if(touchedMinutes) return;
   var miles = parseFloat($('miles').value) || 0;
-  var drive = miles * 2.4;
   var stops = Math.max(1, parseFloat($('stops').value) || 1);
-  var mins;
-  if(mode === 'ic'){
-    var items = parseFloat($('items').value) || 0;
-    mins = drive + 12 + items * 0.9 + (stops - 1) * 6;
-  } else {
-    mins = drive + 8 + (stops - 1) * 7;
-  }
+  var items = parseFloat($('items').value) || 0;
+  var mins = rawMinutes(miles, stops, items, mode) * paceFactor();
   $('minutes').value = Math.max(1, Math.round(mins));
+}
+
+function renderPace(){
+  var p = loadPace();
+  var el = $('pacenote');
+  $('pacebtn').hidden = p.length === 0;
+  if(p.length < 3){
+    var left = 3 - p.length;
+    el.className = 'pacenote';
+    el.textContent = 'Finish ' + left + ' more run' + (left === 1 ? '' : 's') +
+      ' with the Delivered button and this clock starts using your real pace.';
+    return;
+  }
+  var f = paceFactor();
+  var off = Math.round(Math.abs(f - 1) * 100);
+  el.className = 'pacenote on';
+  if(off < 5){
+    el.textContent = 'Set to your pace, from your last ' + p.length + ' runs.';
+  } else if(f > 1){
+    el.textContent = 'Your runs take about ' + off + '% longer than the guess. Already added in.';
+  } else {
+    el.textContent = 'You run about ' + off + '% faster than the guess. Already taken off.';
+  }
+}
+
+function clearPace(){
+  store('dm-pace', '[]');
+  touchedMinutes = false;
+  autoMinutes();
+  compute();
+  renderPace();
 }
 
 function bump(id, by){
@@ -839,9 +905,10 @@ function chartRows(){
   var s = readSettings();
   var cpm = (s.gas / s.mpg) + s.wear;
   var out = [];
+  var pace = paceFactor();
   for(var one = 1; one <= 10; one++){
     var rt = one * 2;
-    var mins = rt * 2.4 + 8;
+    var mins = rawMinutes(rt, 1, 0, 'dd') * pace;
     var minPay = (s.target * (mins / 60)) + (cpm * rt);
     out.push({
       miles: one + (one === 1 ? ' mile' : ' miles'),
@@ -1098,7 +1165,9 @@ function setRun(r){
 function startRun(){
   var d = compute();
   var stops = Math.max(1, parseFloat($('stops').value) || 1);
-  setRun({pay:d.pay, miles:d.miles, stops:stops, done:0, start:Date.now()});
+  var items = parseFloat($('items').value) || 0;
+  setRun({pay:d.pay, miles:d.miles, stops:stops, done:0, start:Date.now(),
+          est:rawMinutes(d.miles, stops, items, mode)});
 }
 
 function deliverOne(){
@@ -1120,6 +1189,18 @@ function deliverOne(){
     r.finished = true;
     r.actualHourly = hourly;
     r.actualMin = Math.round(mins);
+
+    // a run left open overnight says nothing about pace, so don't learn from it
+    if(r.est > 0 && mins < 240){
+      var p = loadPace();
+      p.unshift({est:r.est, act:mins, ts:Date.now()});
+      store('dm-pace', JSON.stringify(p.slice(0, 20)));
+      // the next offer should be judged with what we just learned
+      touchedMinutes = false;
+      autoMinutes();
+      compute();
+      renderPace();
+    }
   }
   setRun(r);
 }
@@ -1183,6 +1264,7 @@ var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
 renderChart();
+renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
 renderLog();
 renderRun();
