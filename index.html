@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>Dash Math</title>
+<title>Mile Money</title>
 <meta name="description" content="Free calculator for delivery drivers. Enter the pay and the miles and it tells you to take it or pass — after gas and wear on your car.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gabrielmitton-cloud.github.io/dashmath/">
-<meta property="og:title" content="Dash Math — take it or leave it, in five seconds">
+<meta property="og:title" content="Mile Money — take it or leave it, in five seconds">
 <meta property="og:description" content="Enter the pay and the miles. It tells you what you'd really make per hour after gas and wear, and the lowest pay worth taking. Free, no signup, works on any phone.">
 <meta name="twitter:card" content="summary">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Dash Math">
+<meta name="apple-mobile-web-app-title" content="Mile Money">
 <meta name="theme-color" content="#ECEEF0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +28,7 @@
     --stop:#C0271F;
     --warn:#B87400;
     --warn-fill:#F0A81E;
+    --pick:#1D5A8F;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html{-webkit-text-size-adjust:100%;}
@@ -64,6 +65,26 @@
   }
   .masthead p{margin:0;font-size:.8rem;color:var(--steel);}
 
+  /* ---------- active run ---------- */
+  .run{background:var(--go);border-radius:16px;padding:9px;margin-bottom:20px;display:none;}
+  .run.done{background:var(--ink);}
+  .run-inner{border:3px solid rgba(255,255,255,.9);border-radius:10px;padding:18px 16px;text-align:center;color:#fff;}
+  .run .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.85;}
+  .run .stopnum{font-family:'Oswald',sans-serif;font-weight:700;font-size:2.1rem;line-height:1.15;margin:5px 0 0;text-transform:uppercase;}
+  .dots{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin:14px 0;}
+  .dot{width:18px;height:18px;border-radius:50%;border:2.5px solid #fff;}
+  .dot.on{background:#fff;}
+  .run .elapsed{font-size:.88rem;opacity:.9;margin-bottom:15px;font-variant-numeric:tabular-nums;}
+  .run .deliver{
+    width:100%;background:#fff;color:var(--go);border:none;border-radius:10px;
+    padding:18px;min-height:64px;font-family:'Oswald',sans-serif;font-weight:700;
+    font-size:1.25rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;
+  }
+  .run.done .deliver{color:var(--ink);}
+  .run .deliver:active{transform:translateY(1px);}
+  .run .cancel{background:none;border:none;color:rgba(255,255,255,.7);font-size:.82rem;
+    text-decoration:underline;margin-top:12px;cursor:pointer;padding:8px 12px;min-height:40px;}
+
   /* ---------- app switch ---------- */
   .switch{
     display:grid;grid-template-columns:1fr 1fr;gap:0;
@@ -76,7 +97,7 @@
     text-transform:uppercase;letter-spacing:.05em;
     padding:15px 8px;cursor:pointer;min-height:52px;
   }
-  .switch button[aria-pressed="true"]{background:var(--ink);color:#fff;}
+  .switch button[aria-pressed="true"]{background:var(--pick);color:#fff;}
 
   /* ---------- steppers ---------- */
   .stepper{margin-bottom:16px;}
@@ -234,6 +255,9 @@
     color:var(--steel);font-size:.9rem;cursor:pointer;font-family:inherit;
   }
 
+  .clear.go-state{border-color:var(--go);color:var(--go);font-weight:700;}
+  .clear.stop-state{border-color:var(--stop);color:var(--stop);font-weight:700;}
+
   .cheat{
     background:var(--ink);color:#fff;border-radius:12px;padding:18px;margin-bottom:14px;
   }
@@ -244,24 +268,46 @@
   .cheat .rule{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
   .cheat p{margin:8px 0 0;font-size:.88rem;color:#C4CBD1;line-height:1.5;}
 
-  /* ---------- decline chart ---------- */
-  .chart{background:var(--ink);color:#fff;border-radius:12px;padding:18px;}
-  .chart h3{
-    font-family:'Oswald',sans-serif;font-weight:600;font-size:1.05rem;
-    text-transform:uppercase;letter-spacing:.05em;margin:0;color:#fff;
+  .chart{background:var(--ink);color:#fff;border-radius:12px;padding:18px;margin-bottom:14px;}
+  .chart h2{font-family:'Oswald',sans-serif;font-size:.9rem;text-transform:uppercase;
+    letter-spacing:.08em;margin:0 0 4px;color:#A8B0B8;font-weight:600;}
+  .chart .sublead{font-size:.82rem;color:#C4CBD1;margin:0 0 12px;line-height:1.4;}
+  .chart table{width:100%;border-collapse:collapse;}
+  .chart th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#8A939B;
+    font-weight:600;text-align:left;padding-bottom:6px;}
+  .chart th:last-child{text-align:right;}
+  .chart td{padding:10px 0;border-top:1px solid #2A2E34;font-size:1.15rem;font-weight:600;
+    font-variant-numeric:tabular-nums;}
+  .chart td:last-child{text-align:right;font-weight:800;color:#5FD39B;}
+  .chart .spec{font-size:.75rem;color:#8A939B;margin:10px 0 0;text-align:center;}
+  .savebtn{
+    display:block;width:100%;margin-bottom:14px;padding:15px;min-height:56px;
+    background:var(--card);border:2px solid var(--edge);border-radius:12px;
+    color:var(--ink);cursor:pointer;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:.95rem;
+    text-transform:uppercase;letter-spacing:.05em;
   }
-  .chart .spec{font-size:.78rem;color:#8A939C;margin:3px 0 14px;}
-  .chart .cr{
-    display:flex;justify-content:space-between;align-items:baseline;
-    padding:9px 0;border-bottom:1px solid #2A2E34;font-size:.95rem;
+  .savebtn:active{transform:translateY(1px);}
+  #chartout{margin-bottom:14px;}
+  #chartout img{width:100%;border-radius:12px;display:block;}
+  .savehint{font-size:.85rem;color:var(--steel);margin:0 0 10px;text-align:center;}
+
+  /* ---------- shift history ---------- */
+  .dedhint{font-size:.76rem;color:var(--steel);margin:10px 0 0;line-height:1.45;}
+  .pasth{
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:.85rem;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--steel);
+    margin:20px 0 8px;
   }
-  .chart .cr:last-of-type{border-bottom:none;}
-  .chart .cm{color:#C4CBD1;}
-  .chart .cv{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.1rem;}
-  .chart .src{
-    font-size:.72rem;color:#8A939C;margin:14px 0 0;text-align:center;
-    letter-spacing:.03em;line-height:1.5;
+  .shift{
+    background:var(--surface);border-radius:10px;padding:12px 13px;margin-bottom:8px;
   }
+  .shift .top{
+    display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;
+  }
+  .shift .when{font-weight:700;font-size:.92rem;}
+  .shift .real{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;}
+  .shift .detail{font-size:.78rem;color:var(--steel);font-variant-numeric:tabular-nums;}
 
   .foot{font-size:.82rem;color:var(--steel);line-height:1.6;margin-top:20px;}
   .foot strong{color:var(--ink);}
@@ -289,7 +335,7 @@
     text-transform:uppercase;letter-spacing:.04em;color:var(--ink);
   }
   .vbtn:active{transform:translateY(1px);}
-  .vbtn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .vbtn[aria-pressed="true"]{background:var(--pick);color:#fff;border-color:var(--pick);}
   .vmpg{
     display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:.82rem;
     text-transform:none;letter-spacing:0;color:var(--steel);margin-top:3px;
@@ -320,7 +366,7 @@
   <div class="masthead">
     <div class="badge">$</div>
     <div>
-      <h1>Dash Math</h1>
+      <h1>Mile Money</h1>
       <p>Let's set up your car — three quick questions</p>
     </div>
   </div>
@@ -388,7 +434,7 @@
       </div>
     </div>
 
-    <button class="btn-primary" onclick="finishSetup()">Start using Dash Math</button>
+    <button class="btn-primary" onclick="finishSetup()">Start using Mile Money</button>
     <button class="clear" onclick="showStep(2)">Back</button>
   </section>
 </div>
@@ -398,8 +444,19 @@
   <div class="masthead">
     <div class="badge">$</div>
     <div>
-      <h1>Dash Math</h1>
+      <h1>Mile Money</h1>
       <p>Take it or leave it — in five seconds</p>
+    </div>
+  </div>
+
+  <div class="run" id="runbox" role="status" aria-live="polite">
+    <div class="run-inner">
+      <div class="eyebrow" id="run-eyebrow">On a run</div>
+      <div class="stopnum" id="run-stop">Stop 1 of 1</div>
+      <div class="dots" id="run-dots"></div>
+      <div class="elapsed" id="run-elapsed">0 min so far</div>
+      <button class="deliver" id="run-btn" onclick="deliverOne()">Delivered</button>
+      <button class="cancel" id="run-cancel" onclick="cancelRun()">Cancel this run</button>
     </div>
   </div>
 
@@ -423,6 +480,15 @@
       <button onclick="bump('miles',-1)" aria-label="Fewer miles">−</button>
       <input type="number" id="miles" value="8" step="1" min="0" inputmode="decimal" aria-label="Round trip miles">
       <button onclick="bump('miles',1)" aria-label="More miles">+</button>
+    </div>
+  </div>
+
+  <div class="stepper">
+    <label for="stops">Stops <span class="sub">&mdash; how many drop-offs</span></label>
+    <div class="ctrl">
+      <button onclick="bump('stops',-1)" aria-label="Fewer stops">&minus;</button>
+      <input type="number" id="stops" value="1" step="1" min="1" inputmode="numeric" aria-label="Number of drop-offs">
+      <button onclick="bump('stops',1)" aria-label="More stops">+</button>
     </div>
   </div>
 
@@ -460,13 +526,14 @@
 
   <div class="rows">
     <div class="r"><span class="k">Pay per mile</span><span class="v" id="permile">$0.00</span></div>
+    <div class="r"><span class="k">Pay per stop</span><span class="v" id="perstop">$0.00</span></div>
     <div class="r"><span class="k">Gas</span><span class="v" id="gascost">−$0.00</span></div>
     <div class="r"><span class="k">Wear &amp; tear</span><span class="v" id="wearcost">−$0.00</span></div>
     <div class="r net"><span class="k">You actually keep</span><span class="v" id="net">$0.00</span></div>
   </div>
 
   <div class="logbtns">
-    <button class="took" onclick="logIt('take')">Took it</button>
+    <button class="took" onclick="startRun()">Took it</button>
     <button class="skip" onclick="logIt('pass')">Passed</button>
   </div>
 
@@ -475,20 +542,6 @@
     <div class="rule" id="rule">$1.35 a mile</div>
     <p id="ruletext">If the offer doesn't beat that per mile, don't even open this. Glance and decline.</p>
   </div>
-
-  <details>
-    <summary>My decline chart</summary>
-    <div class="panel">
-      <p style="font-size:.88rem;color:var(--steel);margin:0 0 12px;">Screenshot this and keep it on your phone. If an offer pays less than the number next to its distance, decline it — no math, no thinking.</p>
-      <div class="chart">
-        <h3>Don't take less than</h3>
-        <p class="spec" id="chartspec">—</p>
-        <div id="chartrows"></div>
-        <p class="src">DASH MATH<br>gabrielmitton-cloud.github.io/dashmath</p>
-      </div>
-      <p style="font-size:.78rem;color:var(--steel);margin:12px 0 0;">Based on a typical DoorDash or Uber Eats run. Instacart shops take longer, so ask for more.</p>
-    </div>
-  </details>
 
   <details>
     <summary>My car &amp; my goal</summary>
@@ -529,15 +582,36 @@
         <div class="statbox"><div class="num" id="s-taken">0</div><div class="lbl">Taken</div></div>
         <div class="statbox"><div class="num" id="s-avg">$0.00</div><div class="lbl">Avg per hour</div></div>
         <div class="statbox"><div class="num" id="s-earn">$0.00</div><div class="lbl">Kept so far</div></div>
+        <div class="statbox"><div class="num" id="s-miles">0</div><div class="lbl">Miles driven</div></div>
+        <div class="statbox"><div class="num" id="s-ded">$0.00</div><div class="lbl">Tax write-off</div></div>
       </div>
+      <p class="dedhint">The write-off is your paid miles at this year's IRS rate. Your real number is higher — driving to the zone, between orders, and home again all count too.</p>
       <button class="clear" onclick="clearLog()">Start a fresh day</button>
+
+      <div id="pastwrap" hidden>
+        <h3 class="pasth">Shifts you've finished</h3>
+        <div id="pastlist"></div>
+        <button class="clear" onclick="clearShifts()">Erase shift history</button>
+      </div>
     </div>
   </details>
+
+  <div class="chart" id="chart">
+    <h2>Decline chart — no phone needed</h2>
+    <p class="sublead">Miles the app shows you (one way) and the least they should be paying. Under that number, decline on sight.</p>
+    <table>
+      <thead><tr><th>Miles shown</th><th>Least pay</th></tr></thead>
+      <tbody id="chartrows"></tbody>
+    </table>
+    <p class="spec" id="chartspec">—</p>
+  </div>
+  <button class="savebtn" id="savechart" onclick="saveChart()">Save this chart to my photos</button>
+  <div id="chartout" hidden></div>
 
   <div class="foot">
     <p><strong>Put it on the home screen:</strong> open this page in Safari, tap the share button, then "Add to Home Screen." It opens like a normal app after that — no browser bars, no hunting for a tab.</p>
     <p><strong>Your numbers stay on your phone.</strong> Nothing is sent anywhere, there's no account, and no one else can see what you make. Clearing your browser data clears it.</p>
-    <p><strong>The fine print:</strong> these are estimates to help you decide, not a guarantee of what you'll earn, and not tax or financial advice. Dash Math is an independent tool — it is not affiliated with, endorsed by, or connected to DoorDash, Uber, Uber Eats, or Instacart. Those names are used only to describe which apps this works with.</p>
+    <p><strong>The fine print:</strong> these are estimates to help you decide, not a guarantee of what you'll earn, and not tax or financial advice. Mile Money is an independent tool — it is not affiliated with, endorsed by, or connected to DoorDash, Uber, Uber Eats, or Instacart. Those names are used only to describe which apps this works with.</p>
     <p><strong>At tax time:</strong> nothing is withheld from this money. Set aside roughly a quarter of it and write down your odometer. Business miles are deductible at <strong>72.5&cent; through June 30, 2026</strong> and <strong>76&cent; from July 1 on</strong> — keep the two halves of the year separate. Deduct every mile, not just the paid ones: driving to the zone, between orders, and home again all count.</p>
   </div>
 </div>
@@ -566,12 +640,13 @@ function autoMinutes(){
   if(touchedMinutes) return;
   var miles = parseFloat($('miles').value) || 0;
   var drive = miles * 2.4;
+  var stops = Math.max(1, parseFloat($('stops').value) || 1);
   var mins;
   if(mode === 'ic'){
     var items = parseFloat($('items').value) || 0;
-    mins = drive + 12 + items * 0.9;
+    mins = drive + 12 + items * 0.9 + (stops - 1) * 6;
   } else {
-    mins = drive + 8;
+    mins = drive + 8 + (stops - 1) * 7;
   }
   $('minutes').value = Math.max(1, Math.round(mins));
 }
@@ -580,6 +655,7 @@ function bump(id, by){
   var el = $(id);
   var v = (parseFloat(el.value) || 0) + by;
   if(v < 0) v = 0;
+  if(id === 'stops' && v < 1) v = 1;
   el.value = Math.round(v * 100) / 100;
   if(id !== 'minutes') autoMinutes();
   compute();
@@ -716,11 +792,20 @@ function compute(){
   var minPay = (s.target * hours) + (costPerMile * miles);
 
   $('rate').textContent = '$' + hourly.toFixed(2);
+  var stops = Math.max(1, parseFloat($('stops').value) || 1);
   $('permile').textContent = '$' + perMile.toFixed(2);
+  $('perstop').textContent = '$' + (pay / stops).toFixed(2);
   $('gascost').textContent = '−$' + gasCost.toFixed(2);
   $('wearcost').textContent = '−$' + wearCost.toFixed(2);
   $('net').textContent = '$' + net.toFixed(2);
   $('minpay').textContent = '$' + minPay.toFixed(2);
+
+  var thumb = costPerMile + (s.target * 0.04);
+  $('permile').style.color = perMile >= thumb ? 'var(--go)'
+    : (perMile >= thumb * 0.85 ? 'var(--warn)' : 'var(--stop)');
+
+  // 3. never show a loss in green
+  $('net').style.color = net < 0 ? 'var(--stop)' : 'var(--go)';
 
   var stressHourly = net / ((minutes + 10) / 60);
   $('stress').textContent = '$' + stressHourly.toFixed(2) + ' /hr';
@@ -741,31 +826,146 @@ function compute(){
   }
 
   // rule of thumb: assumes a typical ~2.4 min/mile trip
-  var thumbRule = costPerMile + (s.target * 0.04);
-  $('rule').textContent = '$' + thumbRule.toFixed(2) + ' a mile';
+  $('rule').textContent = '$' + thumb.toFixed(2) + ' a mile';
 
-  renderChart(s, costPerMile);
+  renderChart();
 
   return {pay:pay, miles:miles, minutes:minutes, net:net, hourly:hourly};
 }
 
-/* ---------- decline chart ---------- */
-var CHART_MILES = [2,3,4,5,6,8,10,12,15,20];
+// the chart is deliberately rounded UP to the next quarter, so it never tells
+// someone to accept less than the calculator would
+function chartRows(){
+  var s = readSettings();
+  var cpm = (s.gas / s.mpg) + s.wear;
+  var out = [];
+  for(var one = 1; one <= 10; one++){
+    var rt = one * 2;
+    var mins = rt * 2.4 + 8;
+    var minPay = (s.target * (mins / 60)) + (cpm * rt);
+    out.push({
+      miles: one + (one === 1 ? ' mile' : ' miles'),
+      pay: '$' + (Math.ceil(minPay * 4) / 4).toFixed(2)
+    });
+  }
+  return out;
+}
 
-function renderChart(s, costPerMile){
+function renderChart(){
+  var s = readSettings();
+  var rows = chartRows();
   var html = '';
-  for(var i=0;i<CHART_MILES.length;i++){
-    var m = CHART_MILES[i];
-    // same trip model as autoMinutes(), rounded the same way, so the chart and
-    // the calculator never disagree about the same trip
-    var hours = Math.max(1, Math.round(m * 2.4 + 8)) / 60;
-    var min = (s.target * hours) + (costPerMile * m);
-    html += '<div class="cr"><span class="cm">' + m + ' miles round trip</span>' +
-            '<span class="cv">$' + min.toFixed(2) + '</span></div>';
+  for(var i = 0; i < rows.length; i++){
+    html += '<tr><td>' + rows[i].miles + '</td><td>' + rows[i].pay + '</td></tr>';
   }
   $('chartrows').innerHTML = html;
   $('chartspec').textContent = s.mpg + ' MPG · $' + s.gas.toFixed(2) + ' gas · $'
     + s.target + ' an hour goal';
+}
+
+/* ---------- chart as a saveable picture ---------- */
+function drawChart(){
+  var s = readSettings();
+  var rows = chartRows();
+  var W = 400, PAD = 26, ROW = 34;
+  var top = 174, foot = 74;
+  var H = top + rows.length * ROW + foot;
+  var c = document.createElement('canvas');
+  var dpr = 2;
+  c.width = W * dpr; c.height = H * dpr;
+  var x = c.getContext('2d');
+  x.scale(dpr, dpr);
+
+  x.fillStyle = '#16181C'; x.fillRect(0, 0, W, H);
+
+  x.textAlign = 'center';
+  x.fillStyle = '#FFFFFF';
+  x.font = '700 26px Oswald, sans-serif';
+  x.fillText('MILE MONEY', W/2, 46);
+  x.fillStyle = '#8A939B';
+  x.font = '600 13px Oswald, sans-serif';
+  x.fillText('DECLINE CHART', W/2, 68);
+  x.font = '400 12px Inter, sans-serif';
+  x.fillText(s.mpg + ' MPG  ·  $' + s.gas.toFixed(2) + ' gas  ·  $' + s.target + ' an hour goal', W/2, 90);
+  x.fillStyle = '#C4CBD1';
+  x.font = '400 12px Inter, sans-serif';
+  x.fillText('Miles the app shows you, and the least', W/2, 114);
+  x.fillText('they should be paying. Under it, decline.', W/2, 130);
+
+  x.textAlign = 'left';
+  x.fillStyle = '#8A939B';
+  x.font = '600 11px Inter, sans-serif';
+  x.fillText('MILES SHOWN', PAD, top - 10);
+  x.textAlign = 'right';
+  x.fillText('LEAST PAY', W - PAD, top - 10);
+
+  for(var i = 0; i < rows.length; i++){
+    var y = top + i * ROW;
+    x.strokeStyle = '#2A2E34'; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(PAD, y - 0.5); x.lineTo(W - PAD, y - 0.5); x.stroke();
+    x.textAlign = 'left';
+    x.fillStyle = '#FFFFFF';
+    x.font = '600 17px Inter, sans-serif';
+    x.fillText(rows[i].miles, PAD, y + 23);
+    x.textAlign = 'right';
+    x.fillStyle = '#5FD39B';
+    x.font = '800 17px Inter, sans-serif';
+    x.fillText(rows[i].pay, W - PAD, y + 23);
+  }
+
+  var fy = top + rows.length * ROW;
+  x.textAlign = 'center';
+  x.fillStyle = '#8A939B';
+  x.font = '400 11px Inter, sans-serif';
+  x.fillText('Your car, your numbers. Make your own at', W/2, fy + 28);
+  x.fillStyle = '#C4CBD1';
+  x.font = '600 12px Inter, sans-serif';
+  x.fillText('gabrielmitton-cloud.github.io/dashmath', W/2, fy + 48);
+
+  return c;
+}
+
+// synchronous so the tap is still "live" when share() is called - Safari
+// rejects a share that comes back after an async hop
+function dataUrlToBlob(d){
+  var parts = d.split(','), bin = atob(parts[1]), n = bin.length, u8 = new Uint8Array(n);
+  while(n--){ u8[n] = bin.charCodeAt(n); }
+  return new Blob([u8], {type:'image/png'});
+}
+
+function showChartFallback(url){
+  var box = $('chartout');
+  box.innerHTML = '<p class="savehint">Press and hold the picture, then choose ' +
+    '&ldquo;Add to Photos&rdquo; or &ldquo;Save Image.&rdquo;</p>' +
+    '<img src="' + url + '" alt="Your decline chart">';
+  box.hidden = false;
+}
+
+function saveChart(){
+  var url;
+  try{
+    url = drawChart().toDataURL('image/png');
+  }catch(e){
+    $('chartout').hidden = false;
+    $('chartout').innerHTML = '<p class="savehint">Couldn’t make the picture on this phone. ' +
+      'You can still take a screenshot of the chart above.</p>';
+    return;
+  }
+  var blob = dataUrlToBlob(url);
+  var file;
+  try{ file = new File([blob], 'decline-chart.png', {type:'image/png'}); }catch(e){}
+
+  if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    navigator.share({files:[file]}).catch(function(){ showChartFallback(url); });
+    return;
+  }
+  // desktop browsers: a real download
+  if('download' in document.createElement('a')){
+    var a = document.createElement('a');
+    a.href = url; a.download = 'decline-chart.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  showChartFallback(url);
 }
 
 function loadLog(){
@@ -782,23 +982,179 @@ function renderLog(){
   $('s-count').textContent = log.length;
   $('s-taken').textContent = taken.length;
   $('s-avg').textContent = '$' + avg.toFixed(2);
+  var tgt = readSettings().target;
+  $('s-avg').style.color = taken.length === 0 ? '' : (avg >= tgt ? 'var(--go)' : 'var(--stop)');
   $('s-earn').textContent = '$' + earned.toFixed(2);
+
+  var miles = taken.reduce(function(a,b){ return a + b.miles; }, 0);
+  $('s-miles').textContent = Math.round(miles);
+  $('s-ded').textContent = '$' + (miles * mileRate(Date.now())).toFixed(2);
+  renderShifts();
 
   var start = fetchv('dm-shift');
   if(start){
     var hrs = (Date.now() - parseInt(start,10)) / 3600000;
-    $('shiftbtn').textContent = 'End shift clock — ' + hrs.toFixed(1) + ' hrs so far';
-    $('s-true').textContent = hrs > 0.05 ? '$' + (earned / hrs).toFixed(2) : '—';
+    $('shiftbtn').textContent = 'Stop shift clock — ' + hrs.toFixed(1) + ' hrs so far';
+    $('shiftbtn').className = 'clear stop-state';
+    if(hrs > 0.05){
+      var real = earned / hrs;
+      $('s-true').textContent = '$' + real.toFixed(2);
+      $('s-true').style.color = real >= readSettings().target ? '#5FD39B' : '#FF8A80';
+    } else {
+      $('s-true').textContent = '—';
+      $('s-true').style.color = '#fff';
+    }
   } else {
     $('shiftbtn').textContent = 'Start shift clock';
+    $('shiftbtn').className = 'clear go-state';
     $('s-true').textContent = '—';
+    $('s-true').style.color = '#fff';
   }
+}
+
+/* ---------- shifts ---------- */
+// IRS business-mileage rate. 2026 splits mid-year, so the date decides.
+function mileRate(ts){
+  var d = new Date(ts);
+  if(d.getFullYear() < 2026) return 0.67;
+  return d >= new Date(2026, 6, 1) ? 0.76 : 0.725;
+}
+
+function loadShifts(){
+  var raw = fetchv('dm-shifts');
+  if(!raw) return [];
+  try{ var a = JSON.parse(raw); return a.length ? a : []; }catch(e){ return []; }
+}
+
+// everything a finished shift needs is frozen at stop time, so clearing the
+// day's log later doesn't rewrite history
+function summarise(log, start, end){
+  var mine = log.filter(function(e){ return e.ts >= start && e.ts <= end; });
+  var taken = mine.filter(function(e){ return e.decision === 'take'; });
+  return {
+    start: start,
+    end: end,
+    hours: (end - start) / 3600000,
+    offers: mine.length,
+    taken: taken.length,
+    net: taken.reduce(function(a,b){ return a + b.net; }, 0),
+    miles: taken.reduce(function(a,b){ return a + b.miles; }, 0)
+  };
 }
 
 function toggleShift(){
   var cur = fetchv('dm-shift');
-  if(cur){ store('dm-shift',''); } else { store('dm-shift', String(Date.now())); }
+  if(cur){
+    var start = parseInt(cur, 10);
+    var end = Date.now();
+    // a mis-tap that starts and stops the clock isn't a shift worth keeping
+    if(end - start > 300000){
+      var all = loadShifts();
+      all.unshift(summarise(loadLog(), start, end));
+      store('dm-shifts', JSON.stringify(all.slice(0, 30)));
+    }
+    store('dm-shift', '');
+  } else {
+    store('dm-shift', String(Date.now()));
+  }
   renderLog();
+}
+
+function clearShifts(){
+  store('dm-shifts', '[]');
+  renderLog();
+}
+
+function renderShifts(){
+  var all = loadShifts();
+  $('pastwrap').hidden = all.length === 0;
+  if(!all.length) return;
+  var html = '';
+  for(var i = 0; i < all.length; i++){
+    var s = all[i];
+    var real = s.hours > 0.05 ? s.net / s.hours : 0;
+    var when = new Date(s.start).toLocaleDateString(undefined, {month:'short', day:'numeric'});
+    html += '<div class="shift"><div class="top">' +
+      '<span class="when">' + when + ' · ' + s.hours.toFixed(1) + ' hrs</span>' +
+      '<span class="real">$' + real.toFixed(2) + ' /hr</span></div>' +
+      '<div class="detail">$' + s.net.toFixed(2) + ' kept · ' + s.taken + ' of ' +
+      s.offers + ' taken · ' + Math.round(s.miles) + ' mi · $' +
+      (s.miles * mileRate(s.start)).toFixed(2) + ' write-off</div></div>';
+  }
+  $('pastlist').innerHTML = html;
+}
+
+function getRun(){
+  var raw = fetchv('dm-run');
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+
+function setRun(r){
+  store('dm-run', r ? JSON.stringify(r) : '');
+  renderRun();
+}
+
+function startRun(){
+  var d = compute();
+  var stops = Math.max(1, parseFloat($('stops').value) || 1);
+  setRun({pay:d.pay, miles:d.miles, stops:stops, done:0, start:Date.now()});
+}
+
+function deliverOne(){
+  var r = getRun();
+  if(!r) return;
+  if(r.finished){ setRun(null); return; }
+  r.done += 1;
+  if(r.done >= r.stops){
+    var s = readSettings();
+    var mins = (Date.now() - r.start) / 60000;
+    if(mins < 1) mins = 1;
+    var net = r.pay - ((r.miles / s.mpg) * s.gas) - (r.miles * s.wear);
+    var hourly = net / (mins / 60);
+    var log = loadLog();
+    log.push({pay:r.pay, miles:r.miles, minutes:Math.round(mins), net:net,
+              hourly:hourly, decision:'take', actual:true, ts:Date.now()});
+    store('dm-log', JSON.stringify(log));
+    renderLog();
+    r.finished = true;
+    r.actualHourly = hourly;
+    r.actualMin = Math.round(mins);
+  }
+  setRun(r);
+}
+
+function cancelRun(){ setRun(null); }
+
+function renderRun(){
+  var r = getRun();
+  var box = $('runbox');
+  if(!r){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  if(r.finished){
+    box.className = 'run done';
+    $('run-eyebrow').textContent = 'Run finished';
+    $('run-stop').textContent = '$' + r.actualHourly.toFixed(2) + ' an hour';
+    $('run-elapsed').textContent = 'Took ' + r.actualMin + ' min for ' + r.stops + (r.stops === 1 ? ' stop' : ' stops');
+    $('run-btn').textContent = 'Done';
+    $('run-cancel').style.display = 'none';
+    $('run-dots').innerHTML = '';
+    return;
+  }
+
+  box.className = 'run';
+  $('run-eyebrow').textContent = r.stops > 1 ? 'On a run — ' + r.stops + ' stops' : 'On a run';
+  $('run-stop').textContent = 'Stop ' + (r.done + 1) + ' of ' + r.stops;
+  $('run-btn').textContent = (r.done + 1 >= r.stops) ? 'Last one — delivered' : 'Delivered';
+  $('run-cancel').style.display = 'inline-block';
+
+  var dots = '';
+  for(var i = 0; i < r.stops; i++){ dots += '<div class="dot' + (i < r.done ? ' on' : '') + '"></div>'; }
+  $('run-dots').innerHTML = dots;
+
+  var mins = Math.round((Date.now() - r.start) / 60000);
+  $('run-elapsed').textContent = mins + (mins === 1 ? ' min so far' : ' min so far');
 }
 
 function logIt(decision){
@@ -814,21 +1170,23 @@ function clearLog(){
   renderLog();
 }
 
-['pay','miles','items'].forEach(function(id){
+['pay','miles','stops','items'].forEach(function(id){
   $(id).addEventListener('input', function(){ autoMinutes(); compute(); });
 });
 $('minutes').addEventListener('input', function(){ touchedMinutes = true; compute(); });
 ['mpg','gasprice','wear','target'].forEach(function(id){
-  $(id).addEventListener('input', function(){ compute(); saveSettings(); });
+  $(id).addEventListener('input', function(){ compute(); saveSettings(); renderChart(); });
 });
 
 var hadSettings = loadSettings();
 var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
+renderChart();
 if(!hadSettings && !urlHit) openSetup('first');
 renderLog();
-setInterval(renderLog, 60000);
+renderRun();
+setInterval(function(){ renderLog(); renderRun(); }, 20000);
 </script>
 </body>
 </html>
