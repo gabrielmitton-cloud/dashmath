@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>Dash Math</title>
+<meta name="description" content="Free calculator for delivery drivers. Enter the pay and the miles and it tells you to take it or pass — after gas and wear on your car.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gabrielmitton-cloud.github.io/dashmath/">
+<meta property="og:title" content="Dash Math — take it or leave it, in five seconds">
+<meta property="og:description" content="Enter the pay and the miles. It tells you what you'd really make per hour after gas and wear, and the lowest pay worth taking. Free, no signup, works on any phone.">
+<meta name="twitter:card" content="summary">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dash Math">
@@ -238,6 +244,25 @@
   .cheat .rule{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
   .cheat p{margin:8px 0 0;font-size:.88rem;color:#C4CBD1;line-height:1.5;}
 
+  /* ---------- decline chart ---------- */
+  .chart{background:var(--ink);color:#fff;border-radius:12px;padding:18px;}
+  .chart h3{
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:1.05rem;
+    text-transform:uppercase;letter-spacing:.05em;margin:0;color:#fff;
+  }
+  .chart .spec{font-size:.78rem;color:#8A939C;margin:3px 0 14px;}
+  .chart .cr{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:9px 0;border-bottom:1px solid #2A2E34;font-size:.95rem;
+  }
+  .chart .cr:last-of-type{border-bottom:none;}
+  .chart .cm{color:#C4CBD1;}
+  .chart .cv{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.1rem;}
+  .chart .src{
+    font-size:.72rem;color:#8A939C;margin:14px 0 0;text-align:center;
+    letter-spacing:.03em;line-height:1.5;
+  }
+
   .foot{font-size:.82rem;color:var(--steel);line-height:1.6;margin-top:20px;}
   .foot strong{color:var(--ink);}
 
@@ -450,6 +475,20 @@
     <div class="rule" id="rule">$1.35 a mile</div>
     <p id="ruletext">If the offer doesn't beat that per mile, don't even open this. Glance and decline.</p>
   </div>
+
+  <details>
+    <summary>My decline chart</summary>
+    <div class="panel">
+      <p style="font-size:.88rem;color:var(--steel);margin:0 0 12px;">Screenshot this and keep it on your phone. If an offer pays less than the number next to its distance, decline it — no math, no thinking.</p>
+      <div class="chart">
+        <h3>Don't take less than</h3>
+        <p class="spec" id="chartspec">—</p>
+        <div id="chartrows"></div>
+        <p class="src">DASH MATH<br>gabrielmitton-cloud.github.io/dashmath</p>
+      </div>
+      <p style="font-size:.78rem;color:var(--steel);margin:12px 0 0;">Based on a typical DoorDash or Uber Eats run. Instacart shops take longer, so ask for more.</p>
+    </div>
+  </details>
 
   <details>
     <summary>My car &amp; my goal</summary>
@@ -703,7 +742,28 @@ function compute(){
   var thumbRule = costPerMile + (s.target * 0.04);
   $('rule').textContent = '$' + thumbRule.toFixed(2) + ' a mile';
 
+  renderChart(s, costPerMile);
+
   return {pay:pay, miles:miles, minutes:minutes, net:net, hourly:hourly};
+}
+
+/* ---------- decline chart ---------- */
+var CHART_MILES = [2,3,4,5,6,8,10,12,15,20];
+
+function renderChart(s, costPerMile){
+  var html = '';
+  for(var i=0;i<CHART_MILES.length;i++){
+    var m = CHART_MILES[i];
+    // same trip model as autoMinutes(), rounded the same way, so the chart and
+    // the calculator never disagree about the same trip
+    var hours = Math.max(1, Math.round(m * 2.4 + 8)) / 60;
+    var min = (s.target * hours) + (costPerMile * m);
+    html += '<div class="cr"><span class="cm">' + m + ' miles round trip</span>' +
+            '<span class="cv">$' + min.toFixed(2) + '</span></div>';
+  }
+  $('chartrows').innerHTML = html;
+  $('chartspec').textContent = s.mpg + ' MPG · $' + s.gas.toFixed(2) + ' gas · $'
+    + s.target + ' an hour goal';
 }
 
 function loadLog(){
