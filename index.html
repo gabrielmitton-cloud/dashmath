@@ -98,6 +98,9 @@
     padding:15px 8px;cursor:pointer;min-height:52px;
   }
   .switch button[aria-pressed="true"]{background:var(--pick);color:#fff;}
+  .switch.small{margin-bottom:8px;}
+  .switch.small button{font-size:.78rem;padding:11px 6px;min-height:46px;letter-spacing:.03em;}
+  .milehint{font-size:.8rem;color:var(--steel);line-height:1.45;margin:7px 0 0;padding:0 2px;}
 
   /* ---------- steppers ---------- */
   .stepper{margin-bottom:16px;}
@@ -482,12 +485,17 @@
   </div>
 
   <div class="stepper">
-    <label for="miles">Miles <span class="sub">— there and back</span></label>
+    <label for="miles">Miles</label>
+    <div class="switch small" role="group" aria-label="Which miles you're typing">
+      <button id="mm-shown" aria-pressed="true" onclick="setMilesMode('shown')">Miles it shows</button>
+      <button id="mm-round" aria-pressed="false" onclick="setMilesMode('round')">There and back</button>
+    </div>
     <div class="ctrl">
       <button onclick="bump('miles',-1)" aria-label="Fewer miles">−</button>
-      <input type="number" id="miles" value="8" step="1" min="0" inputmode="decimal" aria-label="Round trip miles">
+      <input type="number" id="miles" value="4" step="1" min="0" inputmode="decimal" aria-label="Miles">
       <button onclick="bump('miles',1)" aria-label="More miles">+</button>
     </div>
+    <p class="milehint" id="milehint"></p>
   </div>
 
   <div class="stepper">
@@ -533,7 +541,7 @@
   </div>
 
   <div class="rows">
-    <div class="r"><span class="k">Pay per mile</span><span class="v" id="permile">$0.00</span></div>
+    <div class="r"><span class="k">Pay per mile driven</span><span class="v" id="permile">$0.00</span></div>
     <div class="r"><span class="k">Pay per stop</span><span class="v" id="perstop">$0.00</span></div>
     <div class="r"><span class="k">Gas</span><span class="v" id="gascost">−$0.00</span></div>
     <div class="r"><span class="k">Wear &amp; tear</span><span class="v" id="wearcost">−$0.00</span></div>
@@ -654,6 +662,31 @@ function setMode(m){
    rawMinutes() must stay unadjusted. It is the fixed yardstick every finished
    run is measured against; if the learned factor fed back into it, the ratio
    would drift to 1.00 and the app would congratulate itself for being wrong. */
+/* ---------- which miles the driver is typing ----------
+   Delivery apps show one-way distance, so that is the default and the app
+   doubles it. Everything downstream -- gas, wear, time, the log, the tax
+   write-off -- works in miles actually driven, so this is the only place the
+   two conventions meet. */
+var milesMode = 'shown';
+
+function setMilesMode(m){
+  milesMode = m;
+  $('mm-shown').setAttribute('aria-pressed', m === 'shown');
+  $('mm-round').setAttribute('aria-pressed', m === 'round');
+  $('milehint').textContent = m === 'shown'
+    ? 'Type the miles on the offer. The drive back is added for you.'
+    : 'Type the whole trip — out and back.';
+  store('dm-milemode', m);
+  touchedMinutes = false;
+  autoMinutes();
+  compute();
+}
+
+function tripMiles(){
+  var v = parseFloat($('miles').value) || 0;
+  return milesMode === 'shown' ? v * 2 : v;
+}
+
 function rawMinutes(miles, stops, items, m){
   var drive = miles * 2.4;
   if(m === 'ic') return drive + 12 + items * 0.9 + (stops - 1) * 6;
@@ -679,7 +712,7 @@ function paceFactor(){
 
 function autoMinutes(){
   if(touchedMinutes) return;
-  var miles = parseFloat($('miles').value) || 0;
+  var miles = tripMiles();
   var stops = Math.max(1, parseFloat($('stops').value) || 1);
   var items = parseFloat($('items').value) || 0;
   var mins = rawMinutes(miles, stops, items, mode) * paceFactor();
@@ -844,7 +877,7 @@ function finishSetup(){
 
 function compute(){
   var pay = parseFloat($('pay').value) || 0;
-  var miles = parseFloat($('miles').value) || 0;
+  var miles = tripMiles();
   var minutes = parseFloat($('minutes').value) || 1;
   var s = readSettings();
 
@@ -1263,6 +1296,7 @@ var hadSettings = loadSettings();
 var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
+setMilesMode(fetchv('dm-milemode') === 'round' ? 'round' : 'shown');
 renderChart();
 renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
