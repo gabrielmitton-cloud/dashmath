@@ -652,10 +652,21 @@
       <p class="dedhint" style="margin-bottom:14px;">Starts on dark-after-10 so a night shift isn't a face full of white screen.</p>
 
       <button class="clear" onclick="openSetup('again')">Change my car</button>
-      <button class="clear" onclick="shareSetup()">Text myself a backup of these</button>
-      <div id="linkout" hidden></div>
       <button class="clear" id="pacebtn" onclick="clearPace()">Forget my pace and start over</button>
       <p style="font-size:.82rem;color:var(--steel);margin:14px 0 0;">Set these once. They're saved on this phone and stay put.</p>
+    </div>
+  </details>
+
+  <details id="backupwrap">
+    <summary>Save my setup</summary>
+    <div class="panel">
+      <p style="font-size:.9rem;color:var(--steel);margin:0 0 12px;line-height:1.5;">
+        Everything already saves on this phone by itself — you never have to press anything.
+        This is only for getting a <strong>new phone</strong>, or if you ever clear your browser.
+      </p>
+      <button class="btn-primary" style="margin-top:0;" onclick="shareSetup()">Send myself my setup</button>
+      <div id="linkout" hidden></div>
+      <p class="dedhint" id="backupwhat">—</p>
     </div>
   </details>
 
@@ -913,6 +924,7 @@ function applyUrlParams(){
       if(q.has(k) && q.get(k) !== ''){ $(map[k]).value = q.get(k); hit = true; }
     }
     if(hit) saveSettings();
+    if(q.has('d')) restoreLife(q.get('d'));
   }catch(e){}
   return hit;
 }
@@ -1121,17 +1133,60 @@ function setTheme(t){
    No account and no server is the point, so the only backup that fits is one
    the driver holds themselves. The app already restores from mpg/gas/wear/
    target in the query string, so a link is the whole feature. */
+// The plain app address stays clean on purpose -- that is the one you hand
+// another driver, and it must send them to their own setup, not yours. This
+// personal one is separate and only ever goes to yourself.
 function setupLink(){
   var s = readSettings();
-  return location.origin + location.pathname +
+  var url = location.origin + location.pathname +
     '?mpg=' + s.mpg + '&gas=' + s.gas + '&wear=' + s.wear + '&target=' + s.target;
+  var l = loadLife();
+  if(l.offers || l.shifts){
+    try{
+      url += '&d=' + encodeURIComponent(btoa(JSON.stringify([
+        l.offers, l.taken, l.passed, round2(l.net), round2(l.tripNet),
+        round2(l.miles), l.minutes, l.shiftMs, l.shifts, l.since || 0,
+        round2(l.passedHrSum), l.passedHrCount, round2(l.passedPay)
+      ])));
+    }catch(e){}
+  }
+  return url;
 }
 
-function showSetupLink(url){
+function round2(n){ return Math.round((n || 0) * 100) / 100; }
+
+// Restoring only happens onto a phone with no history of its own. An old
+// backup link opened on the phone you actually use must not roll it back.
+function restoreLife(d){
+  var cur = loadLife();
+  if(cur.offers || cur.shifts) return false;
+  try{
+    var a = JSON.parse(atob(decodeURIComponent(d)));
+    if(!a || a.length < 10) return false;
+    saveLife({offers:a[0], taken:a[1], passed:a[2], net:a[3], tripNet:a[4],
+              miles:a[5], minutes:a[6], shiftMs:a[7], shifts:a[8],
+              since:a[9] || null, passedHrSum:a[10] || 0,
+              passedHrCount:a[11] || 0, passedPay:a[12] || 0});
+    return true;
+  }catch(e){ return false; }
+}
+
+function describeBackup(){
+  var l = loadLife();
+  var el = $('backupwhat');
+  if(!el) return;
+  el.textContent = (l.offers || l.shifts)
+    ? 'Carries your car, your goal, and your totals — ' + l.taken + ' trips and $' +
+      l.net.toFixed(2) + ' kept. Opening it on a new phone puts them back.'
+    : 'Carries your car and your goal. Opening it on a new phone sets that phone up the same way.';
+}
+
+function showSetupLink(url, copied){
   var box = $('linkout');
-  box.innerHTML = '<p class="savehint">Copy this and text it to yourself. Opening it on any ' +
-    'phone sets that phone up the same way.</p>' +
-    '<input class="linkbox" type="text" readonly value="' + url + '" onclick="this.select();">';
+  box.innerHTML = '<p class="savehint">' +
+    (copied ? 'Copied. Paste it into a text to yourself and keep it.'
+            : 'Press and hold the box, choose Copy, then text it to yourself.') +
+    '</p><input class="linkbox" type="text" readonly value="' + url + '" onclick="this.select();">';
   box.hidden = false;
   var f = box.querySelector('.linkbox');
   f.focus(); f.select();
@@ -1140,13 +1195,16 @@ function showSetupLink(url){
 function shareSetup(){
   var url = setupLink();
   if(navigator.share){
-    navigator.share({title:'My Mile Money setup', url:url}).catch(function(){ showSetupLink(url); });
+    navigator.share({title:'My Mile Money setup', url:url}).catch(function(){ showSetupLink(url, false); });
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).catch(function(){});
+    navigator.clipboard.writeText(url).then(function(){
+      showSetupLink(url, true);
+    }).catch(function(){ showSetupLink(url, false); });
+    return;
   }
-  showSetupLink(url);
+  showSetupLink(url, false);
 }
 
 /* ---------- chart as a saveable picture ---------- */
@@ -1448,6 +1506,7 @@ function renderLife(){
   }
 
   renderBars();
+  describeBackup();
 
   $('l-since').textContent = l.since
     ? 'Since ' + new Date(l.since).toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'})
@@ -1713,6 +1772,7 @@ setTheme(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'auto');
 setMilesMode(fetchv('dm-milemode') === 'round' ? 'round' : 'shown');
 migrateLife();
 renderLife();
+describeBackup();
 renderChart();
 renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
