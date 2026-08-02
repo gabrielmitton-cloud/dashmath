@@ -67,8 +67,10 @@
     line-height:1.5;
     display:flex;
     justify-content:center;
-    padding:20px 14px 48px;
+    /* room for the fixed tab bar, plus the home indicator on newer iPhones */
+    padding:20px 14px calc(84px + env(safe-area-inset-bottom));
   }
+  body.setup-mode{padding-bottom:48px;}
   .app{width:100%; max-width:440px;}
 
   /* ---------- header ---------- */
@@ -89,6 +91,42 @@
     font-size:1.35rem;margin:0;line-height:1.1;
   }
   .masthead p{margin:0;font-size:.8rem;color:var(--steel);}
+  /* ---------- tabs ---------- */
+  .tab{display:none;}
+  .tab.on{display:block;}
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    background:var(--card);border-top:2px solid var(--edge);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tabbar button{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    border:none;background:none;cursor:pointer;padding:9px 2px 8px;min-height:60px;
+    color:var(--steel);font-family:'Inter',sans-serif;
+    border-top:3px solid transparent;margin-top:-2px;
+  }
+  .tabbar button svg{
+    width:22px;height:22px;fill:none;stroke:currentColor;
+    stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;
+  }
+  .tabbar button span{font-size:.66rem;font-weight:600;letter-spacing:.02em;}
+  .tabbar button[aria-selected="true"]{color:var(--pick);border-top-color:var(--pick);}
+
+  /* ---------- section headings inside a tab ---------- */
+  .sec{margin:0 0 18px;}
+  .sec + .sec{margin-top:26px;}
+  .sec > h2{
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:1.15rem;
+    text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.2;
+  }
+  .sec > p{margin:3px 0 14px;font-size:.85rem;color:var(--steel);line-height:1.45;}
+  .card{
+    background:var(--card);border:2px solid var(--edge);border-radius:14px;
+    padding:16px;margin-bottom:12px;
+  }
+  .card > *:last-child{margin-bottom:0;}
+
   .mast-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0;}
   .iconbtn{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
@@ -145,7 +183,7 @@
   .milehint{font-size:.8rem;color:var(--steel);line-height:1.45;margin:7px 0 0;padding:0 2px;}
 
   /* ---------- steppers ---------- */
-  .stepper{margin-bottom:16px;}
+  .stepper{margin-bottom:13px;}
   .stepper > label{
     display:block;font-size:.82rem;font-weight:700;
     text-transform:uppercase;letter-spacing:.07em;
@@ -190,10 +228,14 @@
   .timeline input:focus{outline:none;border-bottom-color:var(--ink);}
 
   /* ---------- the sign (signature element) ---------- */
+  /* the answer follows you down the page: change the pay and the verdict is
+     still on screen, instead of being scrolled past the inputs that set it */
   .sign{
     border-radius:16px;padding:9px;margin-bottom:14px;
     transition:background .25s ease;
     text-align:center;
+    position:sticky;bottom:10px;z-index:40;
+    box-shadow:0 6px 22px rgba(0,0,0,.18);
   }
   .sign-inner{
     border:3px solid rgba(255,255,255,.92);
@@ -535,17 +577,9 @@
       <h1>Mile Money</h1>
       <p>Take it or leave it</p>
     </div>
-    <div class="mast-actions">
-      <button class="iconbtn" onclick="openPanel('lifewrap')" aria-label="My driving">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.5c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6"/></svg>
-        <span>Me</span>
-      </button>
-      <button class="iconbtn" onclick="openPanel('carwrap')" aria-label="Settings">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 3.2v2.3M12 18.5v2.3M20.8 12h-2.3M5.5 12H3.2M18.2 5.8l-1.6 1.6M7.4 16.6l-1.6 1.6M18.2 18.2l-1.6-1.6M7.4 7.4L5.8 5.8"/></svg>
-        <span>Setup</span>
-      </button>
-    </div>
   </div>
+
+<section class="tab on" id="tab-check" role="tabpanel" aria-labelledby="tb-check">
 
   <div class="run" id="runbox" role="status" aria-live="polite">
     <div class="run-inner">
@@ -640,6 +674,15 @@
     <button class="took" onclick="startRun()">Took it</button>
     <button class="skip" onclick="logIt('pass')">Passed</button>
   </div>
+</section>
+
+
+<section class="tab" id="tab-chart" role="tabpanel" aria-labelledby="tb-chart" hidden>
+
+  <div class="sec">
+    <h2>Know it by heart</h2>
+    <p>An offer is gone in seconds. These are for glancing, not for opening.</p>
+  </div>
 
   <div class="cheat">
     <h2>Rule of thumb — no phone needed</h2>
@@ -647,57 +690,28 @@
     <p id="ruletext">If the offer doesn't beat that per mile, don't even open this. Glance and decline.</p>
   </div>
 
-  <details id="carwrap">
-    <summary>My car &amp; my goal</summary>
-    <div class="panel">
-      <div class="setting">
-        <label for="mpg">Miles per gallon</label>
-        <input type="number" id="mpg" value="26" step="1" min="1" inputmode="decimal">
-      </div>
-      <div class="setting">
-        <label for="gasprice">Price per gallon</label>
-        <input type="number" id="gasprice" value="4.50" step="0.05" min="0" inputmode="decimal">
-      </div>
-      <div class="setting">
-        <label for="wear">Wear &amp; tear per mile
-          <span class="note">Tires, oil, brakes, repairs</span></label>
-        <input type="number" id="wear" value="0.15" step="0.05" min="0" inputmode="decimal">
-      </div>
-      <div class="setting">
-        <label for="target">Target per hour
-          <span class="note">Your "worth leaving the house" number</span></label>
-        <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
-      </div>
-      <h3 class="pasth" style="margin-top:16px;">Screen at night</h3>
-      <div class="switch small three" role="group" aria-label="Screen brightness">
-        <button id="th-auto" aria-pressed="true" onclick="setTheme('auto')">Dark after 10</button>
-        <button id="th-dark" aria-pressed="false" onclick="setTheme('dark')">Always dark</button>
-        <button id="th-light" aria-pressed="false" onclick="setTheme('light')">Always bright</button>
-      </div>
-      <p class="dedhint" style="margin-bottom:14px;">Starts on dark-after-10 so a night shift isn't a face full of white screen.</p>
+  <div class="chart" id="chart">
+    <h2>Decline chart</h2>
+    <p class="sublead">Miles the app shows you (one way) and the least they should be paying. Under that number, decline on sight.</p>
+    <table>
+      <thead><tr><th>Miles shown</th><th>Least pay</th></tr></thead>
+      <tbody id="chartrows"></tbody>
+    </table>
+    <p class="spec" id="chartspec">—</p>
+  </div>
+  <button class="savebtn" id="savechart" onclick="saveChart()">Save this chart to my photos</button>
+  <div id="chartout" hidden></div>
+</section>
 
-      <button class="clear" onclick="openSetup('again')">Change my car</button>
-      <button class="clear" id="pacebtn" onclick="clearPace()">Forget my pace and start over</button>
-      <p style="font-size:.82rem;color:var(--steel);margin:14px 0 0;">Set these once. They're saved on this phone and stay put.</p>
-    </div>
-  </details>
 
-  <details id="backupwrap">
-    <summary>Save my setup</summary>
-    <div class="panel">
-      <p style="font-size:.9rem;color:var(--steel);margin:0 0 12px;line-height:1.5;">
-        Everything already saves on this phone by itself — you never have to press anything.
-        This is only for getting a <strong>new phone</strong>, or if you ever clear your browser.
-      </p>
-      <button class="btn-primary" style="margin-top:0;" onclick="shareSetup()">Send myself my setup</button>
-      <div id="linkout" hidden></div>
-      <p class="dedhint" id="backupwhat">—</p>
-    </div>
-  </details>
+<section class="tab" id="tab-me" role="tabpanel" aria-labelledby="tb-me" hidden>
 
-  <details>
-    <summary>Today's log</summary>
-    <div class="panel">
+  <div class="sec">
+    <h2>Today</h2>
+    <p>Start the clock when you go out. It's the only way the app knows what waiting costs you.</p>
+  </div>
+
+  <div class="card">
       <button class="clear" id="shiftbtn" onclick="toggleShift()" style="margin-top:0;margin-bottom:12px;">Start shift clock</button>
       <div class="statbox" style="margin-bottom:10px;background:var(--panel);">
         <div class="num" id="s-true" style="color:var(--onpanel);">—</div>
@@ -719,12 +733,14 @@
         <div id="pastlist"></div>
         <button class="clear" onclick="clearShifts()">Erase shift history</button>
       </div>
-    </div>
-  </details>
+  </div>
 
-  <details id="lifewrap">
-    <summary>All my driving</summary>
-    <div class="panel">
+  <div class="sec">
+    <h2>All my driving</h2>
+    <p>Every offer you've judged, since the day you started. A fresh day never resets these.</p>
+  </div>
+
+  <div class="card" id="lifewrap">
       <p id="lifeempty" class="dedhint" style="margin-top:0;" hidden>Nothing counted yet. Tap <strong>Took it</strong> or <strong>Passed</strong> under an offer and this starts filling in — and it keeps counting no matter how many times you start a fresh day.</p>
       <div id="lifestats">
       <div class="statbox" style="margin-bottom:10px;background:var(--panel);">
@@ -762,31 +778,93 @@
       </div>
 
       <p class="dedhint" id="l-since"></p>
-      <p class="dedhint">These keep counting no matter how many times you start a fresh day. Only the button below resets them.</p>
       <button class="clear" onclick="resetLife()">Erase all my totals</button>
       </div>
-    </div>
-  </details>
-
-  <div class="chart" id="chart">
-    <h2>Decline chart — no phone needed</h2>
-    <p class="sublead">Miles the app shows you (one way) and the least they should be paying. Under that number, decline on sight.</p>
-    <table>
-      <thead><tr><th>Miles shown</th><th>Least pay</th></tr></thead>
-      <tbody id="chartrows"></tbody>
-    </table>
-    <p class="spec" id="chartspec">—</p>
   </div>
-  <button class="savebtn" id="savechart" onclick="saveChart()">Save this chart to my photos</button>
-  <div id="chartout" hidden></div>
+</section>
+
+
+<section class="tab" id="tab-setup" role="tabpanel" aria-labelledby="tb-setup" hidden>
+
+  <div class="sec">
+    <h2>My car &amp; my goal</h2>
+    <p>Set these once. They're saved on this phone and stay put.</p>
+  </div>
+
+  <div class="card">
+      <div class="setting">
+        <label for="mpg">Miles per gallon</label>
+        <input type="number" id="mpg" value="26" step="1" min="1" inputmode="decimal">
+      </div>
+      <div class="setting">
+        <label for="gasprice">Price per gallon</label>
+        <input type="number" id="gasprice" value="4.50" step="0.05" min="0" inputmode="decimal">
+      </div>
+      <div class="setting">
+        <label for="wear">Wear &amp; tear per mile
+          <span class="note">Tires, oil, brakes, repairs</span></label>
+        <input type="number" id="wear" value="0.15" step="0.05" min="0" inputmode="decimal">
+      </div>
+      <div class="setting">
+        <label for="target">Target per hour
+          <span class="note">Your "worth leaving the house" number</span></label>
+        <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
+      </div>
+      <button class="clear" onclick="openSetup('again')">Change my car</button>
+      <button class="clear" id="pacebtn" onclick="clearPace()">Forget my pace and start over</button>
+  </div>
+
+  <div class="sec">
+    <h2>Screen at night</h2>
+    <p>Starts on dark-after-10 so a night shift isn't a face full of white screen.</p>
+  </div>
+
+  <div class="switch small three" role="group" aria-label="Screen brightness">
+    <button id="th-auto" aria-pressed="true" onclick="setTheme('auto')">Dark after 10</button>
+    <button id="th-dark" aria-pressed="false" onclick="setTheme('dark')">Always dark</button>
+    <button id="th-light" aria-pressed="false" onclick="setTheme('light')">Always bright</button>
+  </div>
+
+  <div class="sec" style="margin-top:26px;">
+    <h2>Save my setup</h2>
+    <p>Everything already saves on this phone by itself — you never have to press anything. This is only for getting a <strong>new phone</strong>, or if you ever clear your browser.</p>
+  </div>
+
+  <div class="card" id="backupwrap">
+    <button class="btn-primary" style="margin-top:0;" onclick="shareSetup()">Send myself my setup</button>
+    <div id="linkout" hidden></div>
+    <p class="dedhint" id="backupwhat">—</p>
+  </div>
 
   <div class="foot">
     <p><strong>Put it on the home screen:</strong> open this page in Safari, tap the share button, then "Add to Home Screen." It opens like a normal app after that — no browser bars, no hunting for a tab.</p>
     <p><strong>Your numbers stay on your phone.</strong> Nothing is sent anywhere, there's no account, and no one else can see what you make. Clearing your browser data clears it.</p>
     <p><strong>The fine print:</strong> these are estimates to help you decide, not a guarantee of what you'll earn, and not tax or financial advice. Mile Money is an independent tool — it is not affiliated with, endorsed by, or connected to DoorDash, Uber, Uber Eats, or Instacart. Those names are used only to describe which apps this works with.</p>
     <p><strong>At tax time:</strong> nothing is withheld from this money. Set aside roughly a quarter of it and write down your odometer. Business miles are deductible at <strong>72.5&cent; through June 30, 2026</strong> and <strong>76&cent; from July 1 on</strong> — keep the two halves of the year separate. Deduct every mile, not just the paid ones: driving to the zone, between orders, and home again all count.</p>
+    <p id="buildstamp" style="opacity:.7;"></p>
   </div>
+</section>
+
 </div>
+
+<nav class="tabbar" id="tabbar" role="tablist" aria-label="Sections">
+  <button id="tb-check" role="tab" aria-selected="true" aria-controls="tab-check" onclick="showTab('check')">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
+    <span>Check</span>
+  </button>
+  <button id="tb-chart" role="tab" aria-selected="false" aria-controls="tab-chart" onclick="showTab('chart')">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16V9M12.5 16v-4M17 16v-7"/></svg>
+    <span>Chart</span>
+  </button>
+  <button id="tb-me" role="tab" aria-selected="false" aria-controls="tab-me" onclick="showTab('me')">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.5c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6"/></svg>
+    <span>Me</span>
+  </button>
+  <button id="tb-setup" role="tab" aria-selected="false" aria-controls="tab-setup" onclick="showTab('setup')">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 3.2v2.3M12 18.5v2.3M20.8 12h-2.3M5.5 12H3.2M18.2 5.8l-1.6 1.6M7.4 16.6l-1.6 1.6M18.2 18.2l-1.6-1.6M7.4 7.4L5.8 5.8"/></svg>
+    <span>Setup</span>
+  </button>
+</nav>
 
 <script>
 var mem = {};
@@ -979,12 +1057,17 @@ function openSetup(mode){
 
   $('calc').hidden = true;
   $('setup').hidden = false;
+  // the tab bar has nothing to do with setup and would only invite escaping it
+  $('tabbar').hidden = true;
+  document.body.classList.add('setup-mode');
   showStep(1);
 }
 
 function closeSetup(){
   $('setup').hidden = true;
   $('calc').hidden = false;
+  $('tabbar').hidden = false;
+  document.body.classList.remove('setup-mode');
   window.scrollTo(0,0);
 }
 
@@ -1452,24 +1535,23 @@ function migrateLife(){
   if(l.offers || l.shifts) saveLife(l);
 }
 
-/* ---------- corner shortcuts ----------
-   These panels sit at the bottom of a long scroll. The corner buttons open the
-   right one and take the driver to it, rather than adding a second copy of
-   anything that could drift out of step. */
-function openPanel(id){
-  var d = $(id);
-  if(!d) return;
-  var others = ['carwrap','backupwrap','lifewrap'];
-  for(var i = 0; i < others.length; i++){
-    if(others[i] !== id && $(others[i])) $(others[i]).open = false;
+/* ---------- tabs ----------
+   Everything used to live in one long stack of collapsed panels, which meant a
+   lot of scrolling past things you weren't looking for. Four tabs instead, and
+   the app always opens on Check -- that is what someone reaches for with an
+   offer on screen. */
+var TABS = ['check','chart','me','setup'];
+
+function showTab(name){
+  for(var i = 0; i < TABS.length; i++){
+    var t = TABS[i];
+    var panel = $('tab-' + t), btn = $('tb-' + t);
+    var on = (t === name);
+    panel.hidden = !on;
+    panel.classList.toggle('on', on);
+    btn.setAttribute('aria-selected', on);
   }
-  d.open = true;
-  d.scrollIntoView({behavior:'smooth', block:'start'});
-  d.classList.remove('panelflash');
-  void d.offsetWidth;           // restart the animation if it is tapped twice
-  d.classList.add('panelflash');
-  var s = d.querySelector('summary');
-  if(s){ s.setAttribute('tabindex','-1'); s.focus({preventScroll:true}); }
+  window.scrollTo(0, 0);
 }
 
 function renderBars(){
@@ -1825,6 +1907,13 @@ setMilesMode(fetchv('dm-milemode') === 'round' ? 'round' : 'shown');
 migrateLife();
 renderLife();
 describeBackup();
+showTab('check');
+// so a driver can tell you which build they are on when something looks wrong
+try{
+  $('buildstamp').textContent = 'Version ' +
+    new Date(document.lastModified).toLocaleDateString(undefined,
+      {year:'numeric', month:'short', day:'numeric'}) + '. Updates arrive on their own — nothing to reinstall.';
+}catch(e){}
 renderChart();
 renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
