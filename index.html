@@ -491,8 +491,24 @@
       </div>
     </div>
 
-    <button class="btn-primary" onclick="finishSetup()">Start using Mile Money</button>
+    <button class="btn-primary" onclick="finishSetup()">Next</button>
     <button class="clear" onclick="showStep(2)">Back</button>
+  </section>
+
+  <section class="step" id="step4" hidden>
+    <p class="stepno">You're all set</p>
+    <h2 class="q" id="q4" tabindex="-1">Remember this one number</h2>
+
+    <div class="cheat" style="margin-top:16px;">
+      <h2>Your number</h2>
+      <div class="rule" id="su-rule">—</div>
+      <p>If an offer pays less than that for each mile it shows, decline it. No math, no app.</p>
+    </div>
+
+    <p class="qsub" style="margin-top:14px;">Offers only sit on your screen a few seconds — there's no time to open anything. This app is for while you're parked: check a few offers, learn your numbers, and let it teach your gut.</p>
+    <p class="qsub">Your full chart is in here under <strong>Decline chart</strong>. Save it to your photos and you'll never need to open this at all.</p>
+
+    <button class="btn-primary" onclick="doneSetup()">Got it</button>
   </section>
 </div>
 
@@ -933,7 +949,7 @@ function closeSetup(){
 }
 
 function showStep(n){
-  [1,2,3].forEach(function(i){ $('step'+i).hidden = (i !== n); });
+  [1,2,3,4].forEach(function(i){ $('step'+i).hidden = (i !== n); });
   window.scrollTo(0,0);
   $('q'+n).focus();
 }
@@ -970,6 +986,17 @@ function finishSetup(){
   $('gasprice').value = clamp(parseFloat($('su-gas').value), 0.5, 15, 4.50);
   $('target').value = clamp(parseFloat($('su-target').value), 1, 200, 20);
   saveSettings();
+  // compute before showing the last screen so it can hand them their own
+  // per-mile number -- an offer is gone in under a minute, so the number in
+  // their head is the only one that will ever get used in time
+  autoMinutes();
+  compute();
+  renderChart();
+  $('su-rule').textContent = $('rule').textContent;
+  showStep(4);
+}
+
+function doneSetup(){
   closeSetup();
   autoMinutes();
   compute();
