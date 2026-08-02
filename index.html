@@ -268,7 +268,9 @@
     padding:14px 16px;margin-bottom:14px;font-size:.92rem;
   }
   .stress .k{color:var(--steel);}
-  .stress .v{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;}
+  .stress .drop{display:block;font-size:.75rem;color:var(--steel);opacity:.85;margin-top:2px;}
+  .stress .v{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;
+    white-space:nowrap;padding-left:10px;}
 
   .breakeven{
     background:var(--panel);color:var(--onpanel);border-radius:12px;
@@ -653,7 +655,8 @@
   </div>
 
   <div class="stress">
-    <span class="k">If it runs 10 min long</span>
+    <span class="k">If it runs 10 min long, you'd make
+      <span class="drop" id="stressdrop"></span></span>
     <span class="v" id="stress">$0.00 /hr</span>
   </div>
 
@@ -1156,8 +1159,15 @@ function compute(){
   // 3. never show a loss in green
   $('net').style.color = net < 0 ? 'var(--stop)' : 'var(--go)';
 
+  // this is the whole rate worked out again with ten more minutes on it, not
+  // the size of the drop -- the drop is spelled out underneath so the big
+  // number can't be read as the wrong one
   var stressHourly = net / ((minutes + 10) / 60);
   $('stress').textContent = '$' + stressHourly.toFixed(2) + ' /hr';
+  var drop = hourly - stressHourly;
+  $('stressdrop').textContent = (isFinite(drop) && drop > 0.005)
+    ? '$' + drop.toFixed(2) + ' an hour less than above'
+    : '';
   $('stress').style.color = stressHourly >= s.target ? 'var(--go)'
     : (stressHourly >= s.target * 0.8 ? 'var(--warn)' : 'var(--stop)');
 
