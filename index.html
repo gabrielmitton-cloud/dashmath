@@ -29,7 +29,32 @@
     --warn:#B87400;
     --warn-fill:#F0A81E;
     --pick:#1D5A8F;
+    /* dark blocks need their own names: --ink is the text colour and it flips
+       at night, but these blocks stay dark in both themes */
+    --panel:#16181C;
+    --onpanel:#FFFFFF;
+    --onpanel-mute:#A8B0B8;
+    --panel-line:#2A2E34;
   }
+  html.dark{
+    --ink:#EEF1F4;
+    --surface:#0D0F12;
+    --card:#181B20;
+    --edge:#2C323A;
+    --steel:#98A1AA;
+    --go:#2E9E62;
+    --stop:#B33A32;
+    --warn:#D9962A;
+    --warn-fill:#C98F14;
+    --pick:#2A6FA8;
+    --panel:#22262D;
+    --onpanel:#F2F5F7;
+    --onpanel-mute:#9BA5AE;
+    --panel-line:#363C45;
+  }
+  html.dark .ctrl button{background:#20242A;}
+  html.dark .ctrl button:active{background:#2C323A;}
+  html.dark .sign-inner{border-color:rgba(255,255,255,.75);}
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html{-webkit-text-size-adjust:100%;}
   body{
@@ -53,7 +78,7 @@
   }
   .badge{
     width:38px;height:38px;border-radius:8px;
-    background:var(--ink);color:#fff;
+    background:var(--panel);color:var(--onpanel);
     display:flex;align-items:center;justify-content:center;
     font-family:'Oswald',sans-serif;font-weight:700;font-size:1.1rem;
     flex-shrink:0;
@@ -67,7 +92,7 @@
 
   /* ---------- active run ---------- */
   .run{background:var(--go);border-radius:16px;padding:9px;margin-bottom:20px;display:none;}
-  .run.done{background:var(--ink);}
+  .run.done{background:var(--panel);}
   .run-inner{border:3px solid rgba(255,255,255,.9);border-radius:10px;padding:18px 16px;text-align:center;color:#fff;}
   .run .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.85;}
   .run .stopnum{font-family:'Oswald',sans-serif;font-weight:700;font-size:2.1rem;line-height:1.15;margin:5px 0 0;text-transform:uppercase;}
@@ -100,6 +125,8 @@
   .switch button[aria-pressed="true"]{background:var(--pick);color:#fff;}
   .switch.small{margin-bottom:8px;}
   .switch.small button{font-size:.78rem;padding:11px 6px;min-height:46px;letter-spacing:.03em;}
+  .switch.three{grid-template-columns:1fr 1fr 1fr;}
+  .switch.three button{font-size:.7rem;padding:11px 3px;}
   .milehint{font-size:.8rem;color:var(--steel);line-height:1.45;margin:7px 0 0;padding:0 2px;}
 
   /* ---------- steppers ---------- */
@@ -187,13 +214,13 @@
   .stress .v{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;}
 
   .breakeven{
-    background:var(--ink);color:#fff;border-radius:12px;
+    background:var(--panel);color:var(--onpanel);border-radius:12px;
     padding:14px 16px;margin-bottom:14px;text-align:center;
   }
   .breakeven .big{
     font-weight:800;font-size:1.35rem;font-variant-numeric:tabular-nums;
   }
-  .breakeven .lbl{font-size:.8rem;color:#A8B0B8;}
+  .breakeven .lbl{font-size:.8rem;color:var(--onpanel-mute);}
 
   .rows{
     background:var(--card);border:2px solid var(--edge);border-radius:12px;
@@ -262,27 +289,27 @@
   .clear.stop-state{border-color:var(--stop);color:var(--stop);font-weight:700;}
 
   .cheat{
-    background:var(--ink);color:#fff;border-radius:12px;padding:18px;margin-bottom:14px;
+    background:var(--panel);color:var(--onpanel);border-radius:12px;padding:18px;margin-bottom:14px;
   }
   .cheat h2{
     font-family:'Oswald',sans-serif;font-size:.9rem;text-transform:uppercase;
-    letter-spacing:.08em;margin:0 0 10px;color:#A8B0B8;font-weight:600;
+    letter-spacing:.08em;margin:0 0 10px;color:var(--onpanel-mute);font-weight:600;
   }
   .cheat .rule{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
-  .cheat p{margin:8px 0 0;font-size:.88rem;color:#C4CBD1;line-height:1.5;}
+  .cheat p{margin:8px 0 0;font-size:.88rem;color:var(--onpanel-mute);line-height:1.5;}
 
-  .chart{background:var(--ink);color:#fff;border-radius:12px;padding:18px;margin-bottom:14px;}
+  .chart{background:var(--panel);color:var(--onpanel);border-radius:12px;padding:18px;margin-bottom:14px;}
   .chart h2{font-family:'Oswald',sans-serif;font-size:.9rem;text-transform:uppercase;
-    letter-spacing:.08em;margin:0 0 4px;color:#A8B0B8;font-weight:600;}
-  .chart .sublead{font-size:.82rem;color:#C4CBD1;margin:0 0 12px;line-height:1.4;}
+    letter-spacing:.08em;margin:0 0 4px;color:var(--onpanel-mute);font-weight:600;}
+  .chart .sublead{font-size:.82rem;color:var(--onpanel-mute);margin:0 0 12px;line-height:1.4;}
   .chart table{width:100%;border-collapse:collapse;}
-  .chart th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#8A939B;
+  .chart th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--onpanel-mute);
     font-weight:600;text-align:left;padding-bottom:6px;}
   .chart th:last-child{text-align:right;}
-  .chart td{padding:10px 0;border-top:1px solid #2A2E34;font-size:1.15rem;font-weight:600;
+  .chart td{padding:10px 0;border-top:1px solid var(--panel-line);font-size:1.15rem;font-weight:600;
     font-variant-numeric:tabular-nums;}
   .chart td:last-child{text-align:right;font-weight:800;color:#5FD39B;}
-  .chart .spec{font-size:.75rem;color:#8A939B;margin:10px 0 0;text-align:center;}
+  .chart .spec{font-size:.75rem;color:var(--onpanel-mute);margin:10px 0 0;text-align:center;}
   .savebtn{
     display:block;width:100%;margin-bottom:14px;padding:15px;min-height:56px;
     background:var(--card);border:2px solid var(--edge);border-radius:12px;
@@ -326,6 +353,19 @@
   .shift .real{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;}
   .shift .detail{font-size:.78rem;color:var(--steel);font-variant-numeric:tabular-nums;}
 
+  /* ---------- passed offers + bars ---------- */
+  .passbox{background:var(--surface);border-radius:10px;padding:14px;}
+  .passnum{font-weight:800;font-size:1.5rem;font-variant-numeric:tabular-nums;color:var(--stop);}
+  .passlbl{font-size:.82rem;color:var(--steel);line-height:1.45;margin-top:3px;}
+  .bars{
+    display:flex;align-items:flex-end;gap:4px;height:96px;
+    background:var(--surface);border-radius:10px;padding:10px 8px 6px;
+  }
+  .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;}
+  .barfill{background:var(--edge);border-radius:3px;min-height:3px;}
+  .barfill.has{background:var(--go);}
+  .barday{font-size:.6rem;color:var(--steel);text-align:center;margin-top:4px;}
+
   .foot{font-size:.82rem;color:var(--steel);line-height:1.6;margin-top:20px;}
   .foot strong{color:var(--ink);}
 
@@ -357,11 +397,11 @@
     display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:.82rem;
     text-transform:none;letter-spacing:0;color:var(--steel);margin-top:3px;
   }
-  .vbtn[aria-pressed="true"] .vmpg{color:#A8B0B8;}
+  .vbtn[aria-pressed="true"] .vmpg{color:rgba(255,255,255,.72);}
 
   .btn-primary{
     display:block;width:100%;margin-top:18px;
-    background:var(--ink);color:#fff;border:2px solid var(--ink);border-radius:12px;
+    background:var(--panel);color:var(--onpanel);border:2px solid var(--panel);border-radius:12px;
     font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;
     text-transform:uppercase;letter-spacing:.05em;
     padding:16px 8px;min-height:60px;cursor:pointer;
@@ -485,9 +525,9 @@
   <div class="stepper">
     <label for="pay">Offer pay</label>
     <div class="ctrl">
-      <button onclick="bump('pay',-0.5)" aria-label="Lower pay">−</button>
-      <input type="number" id="pay" value="9" step="0.5" min="0" inputmode="decimal" aria-label="Offer pay in dollars">
-      <button onclick="bump('pay',0.5)" aria-label="Raise pay">+</button>
+      <button onclick="bump('pay',-1)" aria-label="Lower pay">−</button>
+      <input type="number" id="pay" value="9" step="1" min="0" inputmode="decimal" aria-label="Offer pay in dollars">
+      <button onclick="bump('pay',1)" aria-label="Raise pay">+</button>
     </div>
   </div>
 
@@ -587,6 +627,14 @@
           <span class="note">Your "worth leaving the house" number</span></label>
         <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
       </div>
+      <h3 class="pasth" style="margin-top:16px;">Screen at night</h3>
+      <div class="switch small three" role="group" aria-label="Screen brightness">
+        <button id="th-auto" aria-pressed="true" onclick="setTheme('auto')">Dark after 10</button>
+        <button id="th-dark" aria-pressed="false" onclick="setTheme('dark')">Always dark</button>
+        <button id="th-light" aria-pressed="false" onclick="setTheme('light')">Always bright</button>
+      </div>
+      <p class="dedhint" style="margin-bottom:14px;">Starts on dark-after-10 so a night shift isn't a face full of white screen.</p>
+
       <button class="clear" onclick="openSetup('again')">Change my car</button>
       <button class="clear" onclick="shareSetup()">Text myself a backup of these</button>
       <div id="linkout" hidden></div>
@@ -599,9 +647,9 @@
     <summary>Today's log</summary>
     <div class="panel">
       <button class="clear" id="shiftbtn" onclick="toggleShift()" style="margin-top:0;margin-bottom:12px;">Start shift clock</button>
-      <div class="statbox" style="margin-bottom:10px;background:var(--ink);">
-        <div class="num" id="s-true" style="color:#fff;">—</div>
-        <div class="lbl" style="color:#A8B0B8;">Real per hour — waiting included</div>
+      <div class="statbox" style="margin-bottom:10px;background:var(--panel);">
+        <div class="num" id="s-true" style="color:var(--onpanel);">—</div>
+        <div class="lbl" style="color:var(--onpanel-mute);">Real per hour — waiting included</div>
       </div>
       <div class="statgrid">
         <div class="statbox"><div class="num" id="s-count">0</div><div class="lbl">Offers seen</div></div>
@@ -625,9 +673,9 @@
   <details id="lifewrap" hidden>
     <summary>All my driving</summary>
     <div class="panel">
-      <div class="statbox" style="margin-bottom:10px;background:var(--ink);">
-        <div class="num" id="l-true" style="color:#fff;">—</div>
-        <div class="lbl" id="l-truelbl" style="color:#A8B0B8;">Real per hour</div>
+      <div class="statbox" style="margin-bottom:10px;background:var(--panel);">
+        <div class="num" id="l-true" style="color:var(--onpanel);">—</div>
+        <div class="lbl" id="l-truelbl" style="color:var(--onpanel-mute);">Real per hour</div>
       </div>
       <div class="statgrid">
         <div class="statbox"><div class="num" id="l-net">$0.00</div><div class="lbl">Kept, all time</div></div>
@@ -641,6 +689,24 @@
         <div class="num" id="l-ded">$0.00</div>
         <div class="lbl">Mileage write-off earned</div>
       </div>
+
+      <div id="passedwrap" hidden>
+        <h3 class="pasth">What you turned down</h3>
+        <div class="passbox">
+          <div class="passnum" id="p-avg">—</div>
+          <div class="passlbl" id="p-line">—</div>
+        </div>
+      </div>
+
+      <h3 class="pasth">Last two weeks</h3>
+      <div class="bars" id="bars"></div>
+      <div class="statgrid" style="margin-top:10px;">
+        <div class="statbox"><div class="num" id="w-net">$0.00</div><div class="lbl">Kept, last 7 days</div></div>
+        <div class="statbox"><div class="num" id="m-net">$0.00</div><div class="lbl" id="m-netlbl">Kept this month</div></div>
+        <div class="statbox"><div class="num" id="w-days">0</div><div class="lbl">Days out, last 7</div></div>
+        <div class="statbox"><div class="num" id="m-miles">0</div><div class="lbl" id="m-mileslbl">Miles this month</div></div>
+      </div>
+
       <p class="dedhint" id="l-since"></p>
       <p class="dedhint">These keep counting no matter how many times you start a fresh day. Only the buttons below reset them.</p>
       <button class="clear" onclick="resetLife()">Erase all my totals</button>
@@ -997,6 +1063,33 @@ function renderChart(){
     + s.target + ' an hour goal';
 }
 
+/* ---------- night mode ----------
+   Defaults to switching itself on at 10pm, because that is when this app is
+   actually in someone's hand and a white screen is the last thing they want
+   between glances at the road. Still overridable both ways. */
+var theme = 'auto';
+
+function nightNow(){
+  var h = new Date().getHours();
+  return h >= 22 || h < 6;
+}
+
+function applyTheme(){
+  var dark = theme === 'dark' || (theme === 'auto' && nightNow());
+  document.documentElement.classList.toggle('dark', dark);
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', dark ? '#0D0F12' : '#ECEEF0');
+}
+
+function setTheme(t){
+  theme = t;
+  $('th-auto').setAttribute('aria-pressed', t === 'auto');
+  $('th-dark').setAttribute('aria-pressed', t === 'dark');
+  $('th-light').setAttribute('aria-pressed', t === 'light');
+  store('dm-theme', t);
+  applyTheme();
+}
+
 /* ---------- backup link ----------
    No account and no server is the point, so the only backup that fits is one
    the driver holds themselves. The app already restores from mpg/gas/wear/
@@ -1143,7 +1236,57 @@ function saveChart(){
 // into net alone would inflate the per-hour figure.
 function blankLife(){
   return {offers:0, taken:0, passed:0, net:0, tripNet:0, miles:0, minutes:0,
-          shiftMs:0, shifts:0, since:null};
+          shiftMs:0, shifts:0, since:null,
+          passedHrSum:0, passedHrCount:0, passedPay:0};
+}
+
+/* ---------- day by day ----------
+   Kept apart from shifts because the shift clock is optional -- a driver who
+   never starts it still deserves a week view. */
+function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+function dayKey(ts){
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
+function loadDays(){
+  var raw = fetchv('dm-days');
+  if(!raw) return {};
+  try{ var o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; }catch(e){ return {}; }
+}
+
+function addDay(ts, patch){
+  var days = loadDays();
+  var k = dayKey(ts);
+  var d = days[k] || {net:0, miles:0, taken:0, offers:0};
+  for(var f in patch){ d[f] = (d[f] || 0) + patch[f]; }
+  days[k] = d;
+  // bound the store; 120 days covers any tax question worth asking
+  var keys = Object.keys(days).sort();
+  while(keys.length > 120){ delete days[keys.shift()]; }
+  store('dm-days', JSON.stringify(days));
+}
+
+function sumDays(fromTs, toTs){
+  var days = loadDays();
+  var t = {net:0, miles:0, taken:0, offers:0, active:0};
+  for(var k in days){
+    var parts = k.split('-');
+    var d = new Date(+parts[0], +parts[1] - 1, +parts[2]).getTime();
+    if(d >= fromTs && d <= toTs){
+      t.net += days[k].net; t.miles += days[k].miles;
+      t.taken += days[k].taken; t.offers += days[k].offers;
+      t.active += 1;
+    }
+  }
+  return t;
+}
+
+function midnight(ts){
+  var d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
 }
 
 function loadLife(){
@@ -1196,8 +1339,46 @@ function migrateLife(){
   if(l.offers || l.shifts) saveLife(l);
 }
 
+function renderBars(){
+  var days = loadDays();
+  var today = midnight(Date.now());
+  var DAY = 86400000;
+  var vals = [], max = 0;
+  for(var i = 13; i >= 0; i--){
+    var ts = today - i * DAY;
+    var d = days[dayKey(ts)];
+    var n = d ? d.net : 0;
+    if(n > max) max = n;
+    vals.push({ts:ts, net:n});
+  }
+  var html = '';
+  for(var j = 0; j < vals.length; j++){
+    var pct = max > 0 ? Math.max(3, Math.round(vals[j].net / max * 100)) : 3;
+    var dow = new Date(vals[j].ts).toLocaleDateString(undefined, {weekday:'narrow'});
+    html += '<div class="bar" title="$' + vals[j].net.toFixed(2) + '">' +
+      '<div class="barfill' + (vals[j].net > 0 ? ' has' : '') + '" style="height:' + pct + '%"></div>' +
+      '<div class="barday">' + dow + '</div></div>';
+  }
+  $('bars').innerHTML = html;
+
+  var week = sumDays(today - 6 * DAY, today);
+  var mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0);
+  var month = sumDays(mStart.getTime(), today);
+  $('w-net').textContent = '$' + week.net.toFixed(2);
+  $('m-net').textContent = '$' + month.net.toFixed(2);
+  $('w-days').textContent = week.active;
+  $('m-miles').textContent = Math.round(month.miles).toLocaleString();
+
+  // naming the month matters: early in one, "this month" is legitimately
+  // smaller than "last 7 days" and reads like a bug unless it says August
+  var mName = mStart.toLocaleDateString(undefined, {month:'long'});
+  $('m-netlbl').textContent = 'Kept in ' + mName;
+  $('m-mileslbl').textContent = 'Miles in ' + mName;
+}
+
 function resetLife(){
   saveLife(blankLife());
+  store('dm-days', '{}');
   renderLife();
 }
 
@@ -1228,6 +1409,18 @@ function renderLife(){
     $('l-true').style.color = '#fff';
     $('l-truelbl').textContent = 'Real per hour — use the shift clock to fill this in';
   }
+
+  // what they turned down
+  $('passedwrap').hidden = l.passedHrCount < 1;
+  if(l.passedHrCount >= 1){
+    var pavg = l.passedHrSum / l.passedHrCount;
+    $('p-avg').textContent = '$' + pavg.toFixed(2) + ' an hour';
+    $('p-line').textContent = 'That is what the ' + l.passed + ' offer' +
+      (l.passed === 1 ? '' : 's') + ' you passed would have paid. Your goal is $' +
+      readSettings().target + '.';
+  }
+
+  renderBars();
 
   $('l-since').textContent = l.since
     ? 'Since ' + new Date(l.since).toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'})
@@ -1388,6 +1581,7 @@ function deliverOne(){
               hourly:hourly, decision:'take', actual:true, ts:Date.now()});
     store('dm-log', JSON.stringify(log));
     addLife({offers:1, taken:1, net:net, tripNet:net, miles:r.miles, minutes:Math.round(mins)});
+    addDay(Date.now(), {offers:1, taken:1, net:net, miles:r.miles});
     renderLog();
     r.finished = true;
     r.actualHourly = hourly;
@@ -1448,8 +1642,15 @@ function logIt(decision){
   store('dm-log', JSON.stringify(log));
   if(decision === 'take'){
     addLife({offers:1, taken:1, net:d.net, tripNet:d.net, miles:d.miles, minutes:d.minutes});
+    addDay(Date.now(), {offers:1, taken:1, net:d.net, miles:d.miles});
   } else {
-    addLife({offers:1, passed:1});
+    // a wild hourly on a junk offer would drag the average somewhere useless,
+    // so only sane readings count toward "what you turned down"
+    var sane = isFinite(d.hourly) && d.hourly > -100 && d.hourly < 200;
+    addLife({offers:1, passed:1, passedPay:d.pay,
+             passedHrSum: sane ? d.hourly : 0,
+             passedHrCount: sane ? 1 : 0});
+    addDay(Date.now(), {offers:1});
   }
   renderLog();
 }
@@ -1458,6 +1659,15 @@ function clearLog(){
   store('dm-log', '[]');
   renderLog();
 }
+
+// tapping a number should mean "replace this", not "put the cursor somewhere".
+// Without it, typing 22 over a 9 lands you on 229 or 92.
+['pay','miles','stops','items','minutes','mpg','gasprice','wear','target',
+ 'su-mpg','su-gas','su-target'].forEach(function(id){
+  var el = $(id);
+  if(!el) return;
+  el.addEventListener('focus', function(){ var f = this; setTimeout(function(){ f.select(); }, 0); });
+});
 
 ['pay','miles','stops','items'].forEach(function(id){
   $(id).addEventListener('input', function(){ autoMinutes(); compute(); });
@@ -1471,6 +1681,8 @@ var hadSettings = loadSettings();
 var urlHit = applyUrlParams();
 var savedMode = fetchv('dm-mode');
 if(savedMode) setMode(savedMode); else { autoMinutes(); compute(); }
+var savedTheme = fetchv('dm-theme');
+setTheme(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'auto');
 setMilesMode(fetchv('dm-milemode') === 'round' ? 'round' : 'shown');
 migrateLife();
 renderLife();
@@ -1479,7 +1691,9 @@ renderPace();
 if(!hadSettings && !urlHit) openSetup('first');
 renderLog();
 renderRun();
-setInterval(function(){ renderLog(); renderRun(); }, 20000);
+// applyTheme runs on the tick too, so the screen dims itself at 10 while the
+// app is sitting open in a parked car
+setInterval(function(){ renderLog(); renderRun(); applyTheme(); }, 20000);
 </script>
 </body>
 </html>
