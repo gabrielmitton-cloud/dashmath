@@ -234,7 +234,10 @@
     border-radius:16px;padding:9px;margin-bottom:14px;
     transition:background .25s ease;
     text-align:center;
-    position:sticky;bottom:10px;z-index:40;
+    /* clears the fixed tab bar. At bottom:10px the "per hour, after gas" line
+       sat entirely behind it, leaving a big dollar figure with no unit on it --
+       the one number in the app that must never be read as the offer's pay. */
+    position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:40;
     box-shadow:0 6px 22px rgba(0,0,0,.18);
   }
   .sign-inner{
@@ -989,6 +992,7 @@ function renderPace(){
 }
 
 function clearPace(){
+  if(!confirm('Forget your pace?\n\nThe clock goes back to guessing until you finish three more runs.')) return;
   store('dm-pace', '[]');
   touchedMinutes = false;
   autoMinutes();
@@ -1742,6 +1746,7 @@ function renderBars(){
 }
 
 function resetLife(){
+  if(!confirm('Erase all your totals?\n\nEvery offer, mile and hour since you started. This cannot be undone.')) return;
   saveLife(blankLife());
   store('dm-days', '{}');
   renderLife();
@@ -1893,6 +1898,7 @@ function toggleShift(){
 }
 
 function clearShifts(){
+  if(!confirm('Erase your shift history?\n\nThe finished shifts listed here go away. Your all-time totals stay.')) return;
   store('dm-shifts', '[]');
   renderLog();
 }
@@ -2029,7 +2035,11 @@ function logIt(decision){
   renderLog();
 }
 
+/* Every erase in this app asks first. They are all one tap, none of them can be
+   undone, and the two on the Me tab sit within a thumb's width of buttons a
+   driver presses on purpose. */
 function clearLog(){
+  if(!confirm("Start a fresh day?\n\nToday's list of offers gets erased. Your all-time totals stay.")) return;
   store('dm-log', '[]');
   renderLog();
 }
