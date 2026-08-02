@@ -381,6 +381,13 @@
   #chartout img{width:100%;border-radius:12px;display:block;}
   .savehint{font-size:.85rem;color:var(--steel);margin:0 0 10px;text-align:center;}
   #linkout{margin:10px 0 0;}
+  #dayout{margin:10px 0 0;}
+  .daybox{
+    width:100%;box-sizing:border-box;border-radius:8px;border:2px solid var(--edge);
+    background:var(--surface);color:var(--ink);padding:10px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;line-height:1.5;
+    white-space:pre;overflow-x:auto;
+  }
   .linkbox{
     width:100%;padding:12px 10px;min-height:48px;
     border:2px solid var(--edge);border-radius:8px;background:var(--surface);
@@ -689,8 +696,8 @@
 
   <div class="cheat">
     <h2>Rule of thumb — no phone needed</h2>
-    <div class="rule" id="rule">$1.35 a mile</div>
-    <p id="ruletext">If the offer doesn't beat that per mile, don't even open this. Glance and decline.</p>
+    <div class="rule" id="rule">—</div>
+    <p id="ruletext">Counting the miles the app shows you. Under that, decline on sight.</p>
   </div>
 
   <div class="chart" id="chart">
@@ -729,6 +736,9 @@
         <div class="statbox"><div class="num" id="s-ded">$0.00</div><div class="lbl">Tax write-off</div></div>
       </div>
       <p class="dedhint">The write-off is your paid miles at this year's IRS rate. Your real number is higher — driving to the zone, between orders, and home again all count too.</p>
+      <button class="btn-primary" style="margin-top:0;" onclick="sendDay()">Send today to Gabriel</button>
+      <div id="dayout" hidden></div>
+      <p class="dedhint">Every offer you logged today, with what the app guessed next to what it really took. He reads it to find out where the app was wrong. Nothing is sent unless you press this.</p>
       <button class="clear" onclick="clearLog()">Start a fresh day</button>
 
       <div id="pastwrap" hidden>
@@ -1152,6 +1162,9 @@ function compute(){
   $('net').textContent = '$' + net.toFixed(2);
   $('minpay').textContent = '$' + minPay.toFixed(2);
 
+  // colours the row above only, and it is per mile DRIVEN to match that row.
+  // The memorizable rule on the chart tab is a different number in different
+  // miles -- see ruleOfThumb().
   var thumb = costPerMile + (s.target * 0.04);
   $('permile').style.color = perMile >= thumb ? 'var(--go)'
     : (perMile >= thumb * 0.85 ? 'var(--warn)' : 'var(--stop)');
@@ -1184,9 +1197,6 @@ function compute(){
     $('word').textContent = 'PASS';
   }
 
-  // rule of thumb: assumes a typical ~2.4 min/mile trip
-  $('rule').textContent = '$' + thumb.toFixed(2) + ' a mile';
-
   renderChart();
 
   return {pay:pay, miles:miles, minutes:minutes, net:net, hourly:hourly};
@@ -1211,9 +1221,38 @@ function chartRows(){
   return out;
 }
 
+/* ---------- the rule you carry in your head ----------
+   Same formula as the chart, in the same miles the offer screen shows, so the
+   two can never disagree again.
+
+   One flat "$X a mile" cannot say this. Every order costs a fixed chunk of
+   minutes before you have driven anywhere -- parking, waiting, walking it to
+   the door -- so the pay a trip has to clear is a base plus a per-mile, and
+   the true $/mile runs much higher on short offers than long ones. A single
+   number splits the difference and is wrong at both ends, in the direction
+   that says yes to trips worth declining.
+
+   Both pieces round UP, so the rule never accepts what the chart would turn
+   down. */
+function ruleOfThumb(){
+  var s = readSettings();
+  var cpm = (s.gas / s.mpg) + s.wear;
+  var pace = paceFactor();
+  var m0 = rawMinutes(0, 1, 0, 'dd') * pace;  // minutes an order costs before any driving
+  var m1 = rawMinutes(2, 1, 0, 'dd') * pace;  // one mile shown is two miles driven
+  return {
+    base: Math.ceil((s.target * (m0 / 60)) * 2) / 2,
+    per: Math.ceil((s.target * ((m1 - m0) / 60) + cpm * 2) * 20) / 20
+  };
+}
+
 function renderChart(){
   var s = readSettings();
   var rows = chartRows();
+  var r = ruleOfThumb();
+  $('rule').textContent = '$' + r.base.toFixed(2) + ' + $' + r.per.toFixed(2) + ' a mile';
+  $('ruletext').textContent = 'Counting the miles the app shows you. So a 5-mile offer '
+    + 'needs $' + (r.base + r.per * 5).toFixed(2) + '. Under that, decline on sight.';
   var html = '';
   for(var i = 0; i < rows.length; i++){
     html += '<tr><td>' + rows[i].miles + '</td><td>' + rows[i].pay + '</td></tr>';
@@ -1326,6 +1365,107 @@ function shareSetup(){
     return;
   }
   showSetupLink(url, false);
+}
+
+/* ---------- send my day ----------
+   The backup link carries totals, and totals cannot tell you whether the app
+   was any use on a real shift. For that you need the offers themselves, in the
+   order they arrived, with what the app said next to what actually happened.
+
+   Plain text rather than an encoded link: nothing to decode, no length to run
+   out of, and whoever receives it can simply read it. */
+function clockTime(ts){
+  var d = new Date(ts);
+  var h = d.getHours(), ap = h < 12 ? 'a' : 'p';
+  h = h % 12; if(h === 0) h = 12;
+  return h + ':' + pad2(d.getMinutes()) + ap;
+}
+
+function verdictWord(hourly, target){
+  if(hourly >= target) return 'TAKE';
+  if(hourly >= target * 0.8) return 'CLOSE';
+  return 'PASS';
+}
+
+function dayText(){
+  var s = readSettings();
+  var log = loadLog();
+  var pace = loadPace();
+  var out = [];
+
+  out.push('MILE MONEY — ' + new Date().toLocaleDateString(undefined,
+    {weekday:'short', month:'short', day:'numeric'}));
+  out.push(s.mpg + ' mpg · $' + s.gas.toFixed(2) + ' gas · $' + s.wear.toFixed(2) +
+           ' wear · $' + s.target + '/hr goal');
+  out.push('Pace ×' + paceFactor().toFixed(2) + ' from ' + pace.length +
+           ' finished run' + (pace.length === 1 ? '' : 's'));
+
+  var running = fetchv('dm-shift');
+  if(running) out.push('Clock running since ' + clockTime(parseInt(running, 10)));
+  var shifts = loadShifts();
+  for(var i = 0; i < shifts.length && i < 3; i++){
+    var sh = shifts[i];
+    out.push('Shift ' + clockTime(sh.start) + '–' + clockTime(sh.end) + ' · ' +
+             sh.hours.toFixed(1) + ' hrs · ' + sh.taken + ' of ' + sh.offers +
+             ' taken · $' + sh.net.toFixed(2) + ' kept');
+  }
+
+  out.push('');
+  out.push(log.length + ' offers logged. Miles are round trip.');
+  for(var j = 0; j < log.length; j++){
+    var e = log[j];
+    var pay = e.pay || 0;
+    var head = clockTime(e.ts) + '  $' + pay.toFixed(2) + '  ' +
+               (e.miles || 0).toFixed(1) + 'mi  ';
+    if(e.decision === 'take'){
+      // net does not depend on the clock, so the rate he was shown can be
+      // rebuilt from the minutes that were on screen at the time
+      var said = e.shownMin
+        ? 'said ' + e.shownMin + 'm $' + (e.net / (e.shownMin / 60)).toFixed(2) + '/hr ' +
+          verdictWord(e.net / (e.shownMin / 60), s.target)
+        : 'said ?';
+      out.push(head + said + '  ·  ran ' + e.minutes + 'm $' + e.hourly.toFixed(2) + '/hr  TOOK');
+    } else {
+      out.push(head + 'said ' + e.minutes + 'm $' + e.hourly.toFixed(2) + '/hr ' +
+               verdictWord(e.hourly, s.target) + '  PASSED');
+    }
+  }
+
+  // a run he took but never closed out leaves no log entry at all, so say so
+  // rather than letting the offer disappear from the record
+  var run = getRun();
+  if(run && !run.finished){
+    out.push(clockTime(run.start) + '  $' + (run.pay || 0).toFixed(2) + '  ' +
+             (run.miles || 0).toFixed(1) + 'mi  STILL OPEN, ' + run.done + ' of ' +
+             run.stops + ' delivered');
+  }
+  return out.join('\n');
+}
+
+function showDayText(txt, copied){
+  var box = $('dayout');
+  box.innerHTML = '<p class="savehint">' +
+    (copied ? 'Copied. Paste it into a text message and send it.'
+            : 'Press and hold the box, choose Select All, then Copy.') +
+    '</p><textarea class="daybox" readonly rows="10" onclick="this.select();"></textarea>';
+  box.querySelector('.daybox').value = txt;
+  box.hidden = false;
+}
+
+function sendDay(){
+  var txt = dayText();
+  if(navigator.share){
+    navigator.share({title:'My Mile Money day', text:txt})
+      .catch(function(){ showDayText(txt, false); });
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){
+      showDayText(txt, true);
+    }).catch(function(){ showDayText(txt, false); });
+    return;
+  }
+  showDayText(txt, false);
 }
 
 /* ---------- chart as a saveable picture ---------- */
@@ -1791,8 +1931,11 @@ function startRun(){
   var d = compute();
   var stops = Math.max(1, parseFloat($('stops').value) || 1);
   var items = parseFloat($('items').value) || 0;
+  // est is the bare guess, which is what the pace maths needs. shown is the
+  // number that was actually on the screen when he said yes, which is the only
+  // one worth comparing against the clock afterwards.
   setRun({pay:d.pay, miles:d.miles, stops:stops, done:0, start:Date.now(),
-          est:rawMinutes(d.miles, stops, items, mode)});
+          est:rawMinutes(d.miles, stops, items, mode), shown:d.minutes});
 }
 
 function deliverOne(){
@@ -1808,7 +1951,8 @@ function deliverOne(){
     var hourly = net / (mins / 60);
     var log = loadLog();
     log.push({pay:r.pay, miles:r.miles, minutes:Math.round(mins), net:net,
-              hourly:hourly, decision:'take', actual:true, ts:Date.now()});
+              hourly:hourly, decision:'take', actual:true, shownMin:r.shown,
+              ts:Date.now()});
     store('dm-log', JSON.stringify(log));
     addLife({offers:1, taken:1, net:net, tripNet:net, miles:r.miles, minutes:Math.round(mins)});
     addDay(Date.now(), {offers:1, taken:1, net:net, miles:r.miles});
