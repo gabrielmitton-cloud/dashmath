@@ -294,6 +294,13 @@
   #chartout{margin-bottom:14px;}
   #chartout img{width:100%;border-radius:12px;display:block;}
   .savehint{font-size:.85rem;color:var(--steel);margin:0 0 10px;text-align:center;}
+  #linkout{margin:10px 0 0;}
+  .linkbox{
+    width:100%;padding:12px 10px;min-height:48px;
+    border:2px solid var(--edge);border-radius:8px;background:var(--surface);
+    font-family:'Inter',sans-serif;font-size:.8rem;color:var(--ink);
+  }
+  .linkbox:focus{outline:none;border-color:var(--ink);}
 
   /* ---------- pace ---------- */
   .pacenote{
@@ -581,6 +588,8 @@
         <input type="number" id="target" value="20" step="1" min="1" inputmode="decimal">
       </div>
       <button class="clear" onclick="openSetup('again')">Change my car</button>
+      <button class="clear" onclick="shareSetup()">Text myself a backup of these</button>
+      <div id="linkout" hidden></div>
       <button class="clear" id="pacebtn" onclick="clearPace()">Forget my pace and start over</button>
       <p style="font-size:.82rem;color:var(--steel);margin:14px 0 0;">Set these once. They're saved on this phone and stay put.</p>
     </div>
@@ -986,6 +995,38 @@ function renderChart(){
   $('chartrows').innerHTML = html;
   $('chartspec').textContent = s.mpg + ' MPG · $' + s.gas.toFixed(2) + ' gas · $'
     + s.target + ' an hour goal';
+}
+
+/* ---------- backup link ----------
+   No account and no server is the point, so the only backup that fits is one
+   the driver holds themselves. The app already restores from mpg/gas/wear/
+   target in the query string, so a link is the whole feature. */
+function setupLink(){
+  var s = readSettings();
+  return location.origin + location.pathname +
+    '?mpg=' + s.mpg + '&gas=' + s.gas + '&wear=' + s.wear + '&target=' + s.target;
+}
+
+function showSetupLink(url){
+  var box = $('linkout');
+  box.innerHTML = '<p class="savehint">Copy this and text it to yourself. Opening it on any ' +
+    'phone sets that phone up the same way.</p>' +
+    '<input class="linkbox" type="text" readonly value="' + url + '" onclick="this.select();">';
+  box.hidden = false;
+  var f = box.querySelector('.linkbox');
+  f.focus(); f.select();
+}
+
+function shareSetup(){
+  var url = setupLink();
+  if(navigator.share){
+    navigator.share({title:'My Mile Money setup', url:url}).catch(function(){ showSetupLink(url); });
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).catch(function(){});
+  }
+  showSetupLink(url);
 }
 
 /* ---------- chart as a saveable picture ---------- */
