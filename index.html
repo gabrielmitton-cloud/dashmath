@@ -89,6 +89,21 @@
     font-size:1.35rem;margin:0;line-height:1.1;
   }
   .masthead p{margin:0;font-size:.8rem;color:var(--steel);}
+  .mast-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0;}
+  .iconbtn{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    width:52px;min-height:52px;padding:6px 2px;cursor:pointer;
+    background:var(--card);border:2px solid var(--edge);border-radius:12px;
+    color:var(--ink);font-family:'Inter',sans-serif;
+  }
+  .iconbtn:active{transform:translateY(1px);background:var(--surface);}
+  .iconbtn svg{
+    width:20px;height:20px;fill:none;stroke:currentColor;
+    stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;
+  }
+  .iconbtn span{font-size:.6rem;font-weight:600;letter-spacing:.03em;color:var(--steel);}
+  .panelflash{animation:flash 1.1s ease;}
+  @keyframes flash{0%,100%{box-shadow:0 0 0 0 rgba(29,90,143,0);}25%{box-shadow:0 0 0 3px var(--pick);}}
 
   /* ---------- active run ---------- */
   .run{background:var(--go);border-radius:16px;padding:9px;margin-bottom:20px;display:none;}
@@ -518,7 +533,17 @@
     <div class="badge">$</div>
     <div>
       <h1>Mile Money</h1>
-      <p>Take it or leave it — in five seconds</p>
+      <p>Take it or leave it</p>
+    </div>
+    <div class="mast-actions">
+      <button class="iconbtn" onclick="openPanel('lifewrap')" aria-label="My driving">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.5c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6"/></svg>
+        <span>Me</span>
+      </button>
+      <button class="iconbtn" onclick="openPanel('carwrap')" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 3.2v2.3M12 18.5v2.3M20.8 12h-2.3M5.5 12H3.2M18.2 5.8l-1.6 1.6M7.4 16.6l-1.6 1.6M18.2 18.2l-1.6-1.6M7.4 7.4L5.8 5.8"/></svg>
+        <span>Setup</span>
+      </button>
     </div>
   </div>
 
@@ -622,7 +647,7 @@
     <p id="ruletext">If the offer doesn't beat that per mile, don't even open this. Glance and decline.</p>
   </div>
 
-  <details>
+  <details id="carwrap">
     <summary>My car &amp; my goal</summary>
     <div class="panel">
       <div class="setting">
@@ -697,9 +722,11 @@
     </div>
   </details>
 
-  <details id="lifewrap" hidden>
+  <details id="lifewrap">
     <summary>All my driving</summary>
     <div class="panel">
+      <p id="lifeempty" class="dedhint" style="margin-top:0;" hidden>Nothing counted yet. Tap <strong>Took it</strong> or <strong>Passed</strong> under an offer and this starts filling in — and it keeps counting no matter how many times you start a fresh day.</p>
+      <div id="lifestats">
       <div class="statbox" style="margin-bottom:10px;background:var(--panel);">
         <div class="num" id="l-true" style="color:var(--onpanel);">—</div>
         <div class="lbl" id="l-truelbl" style="color:var(--onpanel-mute);">Real per hour</div>
@@ -735,8 +762,9 @@
       </div>
 
       <p class="dedhint" id="l-since"></p>
-      <p class="dedhint">These keep counting no matter how many times you start a fresh day. Only the buttons below reset them.</p>
+      <p class="dedhint">These keep counting no matter how many times you start a fresh day. Only the button below resets them.</p>
       <button class="clear" onclick="resetLife()">Erase all my totals</button>
+      </div>
     </div>
   </details>
 
@@ -1424,6 +1452,26 @@ function migrateLife(){
   if(l.offers || l.shifts) saveLife(l);
 }
 
+/* ---------- corner shortcuts ----------
+   These panels sit at the bottom of a long scroll. The corner buttons open the
+   right one and take the driver to it, rather than adding a second copy of
+   anything that could drift out of step. */
+function openPanel(id){
+  var d = $(id);
+  if(!d) return;
+  var others = ['carwrap','backupwrap','lifewrap'];
+  for(var i = 0; i < others.length; i++){
+    if(others[i] !== id && $(others[i])) $(others[i]).open = false;
+  }
+  d.open = true;
+  d.scrollIntoView({behavior:'smooth', block:'start'});
+  d.classList.remove('panelflash');
+  void d.offsetWidth;           // restart the animation if it is tapped twice
+  d.classList.add('panelflash');
+  var s = d.querySelector('summary');
+  if(s){ s.setAttribute('tabindex','-1'); s.focus({preventScroll:true}); }
+}
+
 function renderBars(){
   var days = loadDays();
   var today = midnight(Date.now());
@@ -1469,8 +1517,12 @@ function resetLife(){
 
 function renderLife(){
   var l = loadLife();
-  $('lifewrap').hidden = (l.offers === 0 && l.shifts === 0);
-  if(l.offers === 0 && l.shifts === 0) return;
+  // the panel stays in place even at zero, so the Me button in the corner
+  // always lands somewhere real
+  var empty = (l.offers === 0 && l.shifts === 0);
+  $('lifeempty').hidden = !empty;
+  $('lifestats').hidden = empty;
+  if(empty) return;
 
   $('l-taken').textContent = l.taken;
   $('l-passed').textContent = l.passed;
