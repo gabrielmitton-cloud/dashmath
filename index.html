@@ -304,9 +304,13 @@
     padding:16px 8px;min-height:56px;border-radius:12px;cursor:pointer;
     border:2px solid var(--edge);background:var(--card);color:var(--ink);
   }
-  .logbtns button:active{transform:translateY(1px);}
+  .logbtns button:active{transform:scale(.96);}
   .logbtns .took{border-color:var(--go);color:var(--go);}
   .logbtns .skip{border-color:var(--stop);color:var(--stop);}
+  /* the tap has to land somewhere visible. Without this the button looked
+     inert and got pressed again, and the same offer went into the log twice. */
+  .logbtns .took.hit{background:var(--go);color:#fff;}
+  .logbtns .skip.hit{background:var(--stop);color:#fff;}
 
   /* ---------- panels ---------- */
   details{
@@ -684,8 +688,8 @@
   </div>
 
   <div class="logbtns">
-    <button class="took" onclick="startRun()">Took it</button>
-    <button class="skip" onclick="logIt('pass')">Passed</button>
+    <button class="took" id="btn-took" onclick="startRun()">Took it</button>
+    <button class="skip" id="btn-pass" onclick="logIt('pass')">Passed</button>
   </div>
 </section>
 
@@ -1934,6 +1938,9 @@ function setRun(r){
 }
 
 function startRun(){
+  if(Date.now() < logLock) return;
+  logLock = Date.now() + 1200;
+  flashBtn('btn-took', 'Started ✓');
   var d = compute();
   var stops = Math.max(1, parseFloat($('stops').value) || 1);
   var items = parseFloat($('items').value) || 0;
@@ -1967,8 +1974,10 @@ function deliverOne(){
     r.actualHourly = hourly;
     r.actualMin = Math.round(mins);
 
-    // a run left open overnight says nothing about pace, so don't learn from it
-    if(r.est > 0 && mins < 240){
+    // A run left open overnight says nothing about pace. Neither does a run
+    // closed out a minute after it started -- no delivery takes one minute, so
+    // that is a mis-tap, and a real export already produced one at $706 an hour.
+    if(r.est > 0 && mins >= 3 && mins < 240){
       var p = loadPace();
       p.unshift({est:r.est, act:mins, ts:Date.now()});
       store('dm-pace', JSON.stringify(p.slice(0, 20)));
@@ -1991,10 +2000,16 @@ function renderRun(){
   box.style.display = 'block';
 
   if(r.finished){
+    // Saying "saved" is not enough on its own -- a driver has no way to check.
+    // The running count is the proof, and it costs nothing to read while the
+    // phone is already in his hand.
+    var n = loadLog().length;
     box.className = 'run done';
-    $('run-eyebrow').textContent = 'Run finished';
+    $('run-eyebrow').textContent = 'Saved to today’s list';
     $('run-stop').textContent = '$' + r.actualHourly.toFixed(2) + ' an hour';
-    $('run-elapsed').textContent = 'Took ' + r.actualMin + ' min for ' + r.stops + (r.stops === 1 ? ' stop' : ' stops');
+    $('run-elapsed').textContent = 'Took ' + r.actualMin + ' min for ' + r.stops +
+      (r.stops === 1 ? ' stop' : ' stops') + ' · ' + n +
+      (n === 1 ? ' offer' : ' offers') + ' logged today';
     $('run-btn').textContent = 'Done';
     $('run-cancel').style.display = 'none';
     $('run-dots').innerHTML = '';
@@ -2015,7 +2030,24 @@ function renderRun(){
   $('run-elapsed').textContent = mins + (mins === 1 ? ' min so far' : ' min so far');
 }
 
+/* A real export came back with the same offer logged three times in the same
+   minute: the button gave no sign it had worked, so it got pressed again. The
+   count of offers judged is the number everything else is measured against, so
+   the button now says what it did and stops listening while it says it. */
+var logLock = 0;
+function flashBtn(id, word){
+  var b = $(id);
+  if(!b) return;
+  var was = b.textContent;
+  b.textContent = word;
+  b.classList.add('hit');
+  setTimeout(function(){ b.textContent = was; b.classList.remove('hit'); }, 1100);
+}
+
 function logIt(decision){
+  if(Date.now() < logLock) return;
+  logLock = Date.now() + 1200;
+  flashBtn('btn-pass', 'Passed ✓');
   var d = compute();
   var log = loadLog();
   log.push({pay:d.pay, miles:d.miles, minutes:d.minutes, net:d.net, hourly:d.hourly, decision:decision, ts:Date.now()});
