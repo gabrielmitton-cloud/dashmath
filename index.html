@@ -1973,6 +1973,7 @@ function deliverOne(){
     r.finished = true;
     r.actualHourly = hourly;
     r.actualMin = Math.round(mins);
+    autoClearRun(r.start);
 
     // A run left open overnight says nothing about pace. Neither does a run
     // closed out a minute after it started -- no delivery takes one minute, so
@@ -1989,6 +1990,20 @@ function deliverOne(){
     }
   }
   setRun(r);
+}
+
+/* The finished panel used to sit on the screen until it was tapped away -- on
+   top of the pay and miles boxes needed for the very next offer, which is
+   exactly when a driver has no attention to spare. It clears itself now. Done
+   is still there for anyone who wants it gone sooner.
+
+   The guard matters: if he takes another offer inside those twelve seconds,
+   this must not wipe the new run out from under him. */
+function autoClearRun(startedAt){
+  setTimeout(function(){
+    var cur = getRun();
+    if(cur && cur.finished && cur.start === startedAt) setRun(null);
+  }, 12000);
 }
 
 function cancelRun(){ setRun(null); }
@@ -2010,7 +2025,7 @@ function renderRun(){
     $('run-elapsed').textContent = 'Took ' + r.actualMin + ' min for ' + r.stops +
       (r.stops === 1 ? ' stop' : ' stops') + ' · ' + n +
       (n === 1 ? ' offer' : ' offers') + ' logged today';
-    $('run-btn').textContent = 'Done';
+    $('run-btn').textContent = 'Done — next offer';
     $('run-cancel').style.display = 'none';
     $('run-dots').innerHTML = '';
     return;
